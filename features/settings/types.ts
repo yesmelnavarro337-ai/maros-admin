@@ -19,6 +19,11 @@ export interface WhatsappSettings {
   defaultMessage: string;
 }
 
+export interface ContactSettings {
+  address: string;
+  businessHours: string;
+}
+
 export interface EmailSettings {
   fromName: string;
   fromEmail: string;
@@ -57,6 +62,7 @@ export interface SiteSettings {
   general: GeneralSettings;
   social: SocialSettings;
   whatsapp: WhatsappSettings;
+  contact: ContactSettings;
   email: EmailSettings;
   seo: SeoSettings;
   legal: LegalSettings;
@@ -69,6 +75,7 @@ export type SettingsSectionKey =
   | "general"
   | "social"
   | "whatsapp"
+  | "contact"
   | "email"
   | "seo"
   | "legal"
@@ -80,6 +87,7 @@ export const SETTINGS_SECTIONS: { key: SettingsSectionKey; label: string }[] = [
   { key: "general", label: "General" },
   { key: "social", label: "Redes sociales" },
   { key: "whatsapp", label: "WhatsApp" },
+  { key: "contact", label: "Contacto" },
   { key: "email", label: "Email" },
   { key: "seo", label: "SEO" },
   { key: "legal", label: "Legal" },

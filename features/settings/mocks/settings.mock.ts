@@ -18,6 +18,10 @@ export const mockSiteSettings: SiteSettings = {
     phoneNumber: "+57 300 133 4567",
     defaultMessage: "¡Hola! Me interesa hacer un pedido de pijamas personalizadas.",
   },
+  contact: {
+    address: "Mz 3 Casa 98 Urb. Doña Clara, Valledupar",
+    businessHours: "Lunes a Sábado · 8:00 a.m. – 6:00 p.m.",
+  },
   email: {
     fromName: "Maro's Pijamas",
     fromEmail: "hola@marospijamas.com",

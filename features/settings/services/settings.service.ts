@@ -14,6 +14,8 @@ interface ApiSiteSettings {
   tikTok?: string | null;
   whatsappNumber: string;
   whatsappDefaultMessage: string;
+  address: string;
+  businessHours: string;
   emailFromName: string;
   emailFromAddress: string;
   notifyNewQuotation: boolean;
@@ -51,6 +53,10 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
     whatsapp: {
       phoneNumber: s.whatsappNumber,
       defaultMessage: s.whatsappDefaultMessage,
+    },
+    contact: {
+      address: s.address,
+      businessHours: s.businessHours,
     },
     email: {
       fromName: s.emailFromName,
@@ -99,6 +105,9 @@ function buildApiPayload(settings: SiteSettings) {
 
     whatsappNumber: settings.whatsapp.phoneNumber,
     whatsappDefaultMessage: settings.whatsapp.defaultMessage,
+
+    address: settings.contact.address,
+    businessHours: settings.contact.businessHours,
 
     emailFromName: settings.email.fromName,
     emailFromAddress: settings.email.fromEmail,

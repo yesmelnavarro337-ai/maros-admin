@@ -10,6 +10,7 @@ import { SettingsNav } from "./settings-nav";
 import { SettingsGeneralPanel } from "./settings-general-panel";
 import { SettingsSocialPanel } from "./settings-social-panel";
 import { SettingsWhatsappPanel } from "./settings-whatsapp-panel";
+import { SettingsContactPanel } from "./settings-contact-panel";
 import { SettingsEmailPanel } from "./settings-email-panel";
 import { SettingsSeoPanel } from "./settings-seo-panel";
 import { SettingsLegalPanel } from "./settings-legal-panel";
@@ -73,6 +74,9 @@ export function SettingsShell() {
           )}
           {active === "whatsapp" && (
             <SettingsWhatsappPanel value={settings.whatsapp} onChange={(v) => setSettings({ ...settings, whatsapp: v })} />
+          )}
+          {active === "contact" && (
+            <SettingsContactPanel value={settings.contact} onChange={(v) => setSettings({ ...settings, contact: v })} />
           )}
           {active === "email" && (
             <SettingsEmailPanel value={settings.email} onChange={(v) => setSettings({ ...settings, email: v })} />
