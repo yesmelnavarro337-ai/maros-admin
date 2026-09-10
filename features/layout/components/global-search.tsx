@@ -41,8 +41,8 @@ export function GlobalSearch() {
     const timeout = setTimeout(async () => {
       const [products, clients, quotations, collections] = await Promise.all([
         getProducts({ search: query }),
-        getClients(),
-        getQuotations(),
+        getClients(query),
+        getQuotations({ search: query }),
         getCollections(),
       ]);
 

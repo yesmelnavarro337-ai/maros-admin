@@ -9,7 +9,7 @@ import type { Product } from "@/features/products/types";
 interface ProductPickerProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
-  filterIds?: string[]; // si se pasa, solo muestra estos productos (usado en Temporadas)
+  filterIds?: string[];
 }
 
 export function ProductPicker({ selectedIds, onChange, filterIds }: ProductPickerProps) {

@@ -1,40 +1,39 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 export function ConversionRateCard({ rate }: { rate: number }) {
-  const radius = 40;
+  const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (rate / 100) * circumference;
 
   return (
     <Card>
-      <CardContent className="pt-6 flex items-center gap-4">
-        <svg width={96} height={96} className="shrink-0 -rotate-90">
-          <circle cx={48} cy={48} r={radius} stroke="var(--secondary)" strokeWidth={8} fill="none" />
+      <CardContent className="pt-5 pb-5 flex items-center gap-3">
+        <svg width={84} height={84} className="shrink-0 -rotate-90">
+          <circle cx={42} cy={42} r={radius} stroke="var(--secondary)" strokeWidth={7} fill="none" />
           <circle
-            cx={48}
-            cy={48}
+            cx={42}
+            cy={42}
             r={radius}
             stroke="var(--primary)"
-            strokeWidth={8}
+            strokeWidth={7}
             fill="none"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"
           />
           <text
-            x={48}
-            y={48}
+            x={42}
+            y={42}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="rotate-90"
-            style={{ fontSize: "18px", fontWeight: 600, fill: "var(--foreground)", transform: "rotate(90deg)", transformOrigin: "48px 48px" }}
+            style={{ fontSize: "16px", fontWeight: 600, fill: "var(--foreground)", transform: "rotate(90deg)", transformOrigin: "42px 42px" }}
           >
             {rate}%
           </text>
         </svg>
         <div>
-          <p className="text-sm text-muted-foreground">Cotizaciones convertidas</p>
-          <p className="text-xs text-muted-foreground mt-1">Últimos 30 días</p>
+          <p className="text-sm text-foreground font-medium">Cotizaciones convertidas</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Últimos 30 días</p>
         </div>
       </CardContent>
     </Card>

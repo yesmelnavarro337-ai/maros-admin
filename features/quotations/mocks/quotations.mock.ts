@@ -6,6 +6,7 @@ export const mockQuotations: Quotation[] = [
   clientId: "c1",
   clientName: "María López",
   clientPhone: "3001234567",
+  clientCity: "Valledupar",
   items: [{
     productId: "p1",
     productName: "Pijama Satín Beige",
@@ -25,6 +26,7 @@ export const mockQuotations: Quotation[] = [
   clientId: "c2",
   clientName: "Carla Ramírez",
   clientPhone: "3009876543",
+  clientCity: "Bogotá",
   items: [{
     productId: "p2",
     productName: "Conjunto Algodón Marfil",

@@ -4,50 +4,43 @@ export interface DashboardStat {
   id: string;
   label: string;
   value: string;
-  change: string;
-  trend: "up" | "down";
   icon: LucideIcon;
 }
 
-export interface SalesVsQuotationsPoint {
-  day: string;
-  ventas: number;
-  cotizaciones: number;
+export interface QuotationStatusCount {
+  status: string;
+  label: string;
+  count: number;
 }
 
-export interface TopProduct {
+export interface LowStockProduct {
   id: string;
   name: string;
-  sales: number;
-  emoji: string;
+  totalStock: number;
+  thumbnailUrl?: string;
 }
 
-export type QuotationStatus =
-  | "nueva"
-  | "en_revision"
-  | "contactada"
-  | "cotizada"
-  | "aceptada"
-  | "rechazada"
-  | "archivada";
-
-export interface RecentQuotation {
+export interface RecentQuotationRow {
   id: string;
   clientName: string;
-  product: string;
-  status: QuotationStatus;
+  productSummary: string;
+  status: string;
   date: string;
+}
+
+export interface ActiveSeasonInfo {
+  name: string;
+  collection: string;
+  collectionId: string;
+  startDate: string;
+  endDate: string;
 }
 
 export interface DashboardData {
   stats: DashboardStat[];
-  salesVsQuotations: SalesVsQuotationsPoint[];
-  conversionRate: number;
-  topProducts: TopProduct[];
-  recentQuotations: RecentQuotation[];
-  activeSeason: {
-    name: string;
-    collection: string;
-    daysRemaining: number;
-  };
+  quotationsByStatus: QuotationStatusCount[];
+  acceptanceRate: number;
+  lowStockProducts: LowStockProduct[];
+  recentQuotations: RecentQuotationRow[];
+  activeSeason: ActiveSeasonInfo | null;
 }

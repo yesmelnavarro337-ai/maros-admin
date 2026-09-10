@@ -7,9 +7,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { loginSchema, type LoginFormValues } from "../schemas/login.schema";
+import { login } from "../services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "@/lib/toast";
 import {
   Form,
   FormControl,
@@ -28,13 +30,21 @@ export function LoginForm() {
     defaultValues: { email: "", password: "", rememberMe: true },
   });
 
-  function onSubmit(values: LoginFormValues) {
-    // Mock: no valida contra backend todavía.
-    // "rememberMe" queda registrado para cuando exista JWT + refresh tokens reales.
-    const storage = values.rememberMe ? localStorage : sessionStorage;
-    storage.setItem("maros-admin-mock-auth", "true");
-    router.push("/admin/dashboard");
+  async function onSubmit(values: LoginFormValues) {
+    try {
+      await login({
+        email: values.email,
+        password: values.password,
+        rememberMe: values.rememberMe ?? false,
+      });
+      router.push("/admin/dashboard");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo iniciar sesión.";
+      toast.error(message);
+    }
   }
+
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <Form {...form}>
@@ -46,7 +56,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Correo electrónico</FormLabel>
               <FormControl>
-                <Input placeholder="admin@marospijamas.com" {...field} />
+                <Input placeholder="admin@marospijamas.com" {...field} disabled={isSubmitting} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -61,7 +71,12 @@ export function LoginForm() {
               <FormLabel>Contraseña</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...field}
+                    disabled={isSubmitting}
+                  />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
@@ -83,7 +98,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem className="flex items-center gap-2 space-y-0">
                 <FormControl>
-                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isSubmitting} />
                 </FormControl>
                 <FormLabel className="text-sm font-normal cursor-pointer">Recordarme</FormLabel>
               </FormItem>
@@ -94,8 +109,8 @@ export function LoginForm() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full mt-2">
-          Iniciar sesión
+        <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
+          {isSubmitting ? "Iniciando sesión..." : "Iniciar sesión"}
         </Button>
       </form>
     </Form>

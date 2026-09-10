@@ -1,5 +1,3 @@
-import type { CollectionId } from "@/features/collections/types";
-
 export type SeasonStatus = "borrador" | "programada" | "activa" | "finalizada";
 
 export interface SeasonColors {
@@ -15,7 +13,8 @@ export interface Season {
   startDate: string;
   endDate: string;
   status: SeasonStatus;
-  collectionId: CollectionId;
+  collectionId: string;
+  collectionName: string;
   heroTitle: string;
   heroSubtitle: string;
   heroImage?: string;

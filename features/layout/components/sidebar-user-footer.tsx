@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -8,24 +7,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-const mockUser = {
-  name: "Valentina Maro",
-  role: "Administradora",
-  initial: "V",
-};
+import { useAuth } from "@/features/auth/context/auth-context";
 
 interface SidebarUserFooterProps {
   collapsed: boolean;
 }
 
 export function SidebarUserFooter({ collapsed }: SidebarUserFooterProps) {
-  const router = useRouter();
+  const { user, loading, logout } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem("maros-admin-mock-auth");
-    router.push("/login");
-  };
+  const displayName = loading ? "Cargando..." : user?.name ?? "";
+  const displayRole = loading ? "" : user?.role ?? "";
+  const initial = displayName ? displayName[0].toUpperCase() : "?";
 
   if (collapsed) {
     return (
@@ -34,12 +27,12 @@ export function SidebarUserFooter({ collapsed }: SidebarUserFooterProps) {
           <TooltipTrigger asChild>
             <Avatar className="h-9 w-9 cursor-default">
               <AvatarFallback className="bg-accent text-accent-foreground text-sm">
-                {mockUser.initial}
+                {initial}
               </AvatarFallback>
             </Avatar>
           </TooltipTrigger>
           <TooltipContent side="right">
-            {mockUser.name} — {mockUser.role}
+            {displayName} — {displayRole}
           </TooltipContent>
         </Tooltip>
       </div>
@@ -50,17 +43,15 @@ export function SidebarUserFooter({ collapsed }: SidebarUserFooterProps) {
     <div className="border-t border-border p-3 flex items-center gap-2">
       <Avatar className="h-9 w-9 shrink-0">
         <AvatarFallback className="bg-accent text-accent-foreground text-sm">
-          {mockUser.initial}
+          {initial}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground truncate">
-          {mockUser.name}
-        </p>
-        <p className="text-xs text-muted-foreground truncate">{mockUser.role}</p>
+        <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+        <p className="text-xs text-muted-foreground truncate">{displayRole}</p>
       </div>
       <button
-        onClick={handleLogout}
+        onClick={logout}
         className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-destructive transition-colors shrink-0"
         title="Cerrar sesión"
       >

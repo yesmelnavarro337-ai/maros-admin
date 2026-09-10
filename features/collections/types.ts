@@ -1,16 +1,11 @@
-export type CollectionId =
-  | "general"
-  | "navidad"
-  | "dia-madre"
-  | "san-valentin"
-  | "halloween"
-  | "dia-padre";
+export type CollectionId = string;
 
 export interface Collection {
-  id: CollectionId;
+  id: string;
   name: string;
   description: string;
   coverImage?: string;
   accentHex: string;
+  isDefault: boolean;
   productIds: string[];
 }

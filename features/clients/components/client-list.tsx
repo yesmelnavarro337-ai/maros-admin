@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductSearch as ClientSearch } from "@/features/products/components/product-search";
+import { ContentCard } from "@/components/shared/content-card";
+import { PageHeader } from "@/components/shared/page-header";
 import { getClients } from "../services/clients.service";
 import { ClientTable } from "./client-table";
 import type { Client } from "../types";
@@ -23,14 +25,17 @@ export function ClientList() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-3xl text-foreground">Clientes</h1>
-        <p className="text-muted-foreground mt-1">Historial de clientes de Maro&apos;s Pijamas</p>
-      </div>
+      <PageHeader title="Clientes" subtitle="Historial de clientes de Maro's Pijamas" />
 
-      <ClientSearch value={search} onChange={setSearch} />
-
-      {loading ? <Skeleton className="h-96 w-full rounded-lg" /> : <ClientTable clients={filtered} />}
+      <ContentCard noPadding toolbar={<ClientSearch value={search} onChange={setSearch} />}>
+        {loading ? (
+          <div className="p-5">
+            <Skeleton className="h-72 w-full rounded-lg" />
+          </div>
+        ) : (
+          <ClientTable clients={filtered} />
+        )}
+      </ContentCard>
     </div>
   );
 }

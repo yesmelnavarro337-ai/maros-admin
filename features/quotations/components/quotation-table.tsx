@@ -1,4 +1,7 @@
-import { MessageCircle, ChevronRight } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { MessageCircle, ChevronRight, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,12 +13,12 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { QuotationStatusBadge } from "./quotation-status-badge";
-import { buildWhatsAppLink } from "../utils/whatsapp";
+import { getWhatsAppLink } from "../services/quotations.service";
+import { toast } from "@/lib/toast";
 import type { Quotation } from "../types";
 
 interface QuotationTableProps {
   quotations: Quotation[];
-  clientCities: Record<string, string>;
   onRowClick: (quotation: Quotation) => void;
 }
 
@@ -23,7 +26,22 @@ function initials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 }
 
-export function QuotationTable({ quotations, clientCities, onRowClick }: QuotationTableProps) {
+export function QuotationTable({ quotations, onRowClick }: QuotationTableProps) {
+  const [loadingWhatsAppId, setLoadingWhatsAppId] = useState<string | null>(null);
+
+  async function handleWhatsAppClick(e: React.MouseEvent, quotationId: string) {
+    e.stopPropagation();
+    setLoadingWhatsAppId(quotationId);
+    try {
+      const { link } = await getWhatsAppLink(quotationId);
+      window.open(link, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo generar el mensaje de WhatsApp.");
+    } finally {
+      setLoadingWhatsAppId(null);
+    }
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -48,7 +66,7 @@ export function QuotationTable({ quotations, clientCities, onRowClick }: Quotati
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{q.clientName}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {clientCities[q.clientId] ?? ""}
+                    {q.clientCity}
                   </p>
                 </div>
               </div>
@@ -57,22 +75,27 @@ export function QuotationTable({ quotations, clientCities, onRowClick }: Quotati
               {q.items[0]?.productName}
               {q.items.length > 1 && ` +${q.items.length - 1}`}
             </TableCell>
-            <TableCell className="text-muted-foreground">{q.createdAt}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {new Date(q.createdAt).toLocaleDateString("es-CO")}
+            </TableCell>
             <TableCell>
               <QuotationStatusBadge status={q.status} />
             </TableCell>
             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-end gap-1">
                 <Button
-                  asChild
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8 text-primary hover:text-primary"
                   title="Enviar por WhatsApp"
+                  onClick={(e) => handleWhatsAppClick(e, q.id)}
+                  disabled={loadingWhatsAppId === q.id}
                 >
-                  <a href={buildWhatsAppLink(q)} target="_blank" rel="noopener noreferrer">
+                  {loadingWhatsAppId === q.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
                     <MessageCircle className="h-4 w-4" />
-                  </a>
+                  )}
                 </Button>
                 <Button
                   size="icon"

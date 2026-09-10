@@ -1,42 +1,91 @@
-import { mockCollections } from "../mocks/collections.mock";
-import type { Collection, CollectionId } from "../types";
+import { apiFetch } from "@/lib/api/client-fetcher";
+import type { Collection } from "../types";
 
-let collectionsStore: Collection[] = [...mockCollections];
+interface ApiCollection {
+  id: string;
+  name: string;
+  description: string;
+  coverImageUrl?: string | null;
+  accentHex: string;
+  isDefault: boolean;
+  productIds: string[];
+}
 
-function delay<T>(data: T, ms = 300): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
+function adaptCollection(c: ApiCollection): Collection {
+  return {
+    id: c.id,
+    name: c.name,
+    description: c.description,
+    coverImage: c.coverImageUrl ?? undefined,
+    accentHex: c.accentHex,
+    isDefault: c.isDefault,
+    productIds: c.productIds,
+  };
 }
 
 export async function getCollections(): Promise<Collection[]> {
-  return delay([...collectionsStore]);
+  const collections = await apiFetch<ApiCollection[]>("Collections");
+  return collections.map(adaptCollection);
 }
 
-export async function getCollectionById(id: CollectionId): Promise<Collection | undefined> {
-  return delay(collectionsStore.find((c) => c.id === id));
+export async function getCollectionById(id: string): Promise<Collection | undefined> {
+  try {
+    const collection = await apiFetch<ApiCollection>(`Collections/${id}`);
+    return adaptCollection(collection);
+  } catch {
+    return undefined;
+  }
+}
+
+export async function createCollection(data: {
+  name: string;
+  description: string;
+  coverImage?: string;
+  accentHex: string;
+}): Promise<Collection> {
+  const created = await apiFetch<ApiCollection>("Collections", {
+    method: "POST",
+    body: {
+      name: data.name,
+      description: data.description,
+      coverImageUrl: data.coverImage ?? null,
+      accentHex: data.accentHex,
+    },
+  });
+  return adaptCollection(created);
 }
 
 export async function updateCollection(
-  id: CollectionId,
-  data: Partial<Pick<Collection, "description" | "coverImage" | "productIds">>
+  id: string,
+  data: Partial<Pick<Collection, "name" | "description" | "coverImage" | "productIds" | "accentHex">>
 ): Promise<Collection | undefined> {
-  collectionsStore = collectionsStore.map((c) => (c.id === id ? { ...c, ...data } : c));
-  return delay(collectionsStore.find((c) => c.id === id));
+  // El backend espera el objeto completo en PUT — traemos el estado actual
+  // para no perder campos que el formulario de esta pantalla no edita.
+  const current = await getCollectionById(id);
+  if (!current) return undefined;
+
+  const merged = { ...current, ...data };
+
+  const updated = await apiFetch<ApiCollection>(`Collections/${id}`, {
+    method: "PUT",
+    body: {
+      name: merged.name,
+      description: merged.description,
+      coverImageUrl: merged.coverImage ?? null,
+      accentHex: merged.accentHex,
+      productIds: merged.productIds,
+    },
+  });
+  return adaptCollection(updated);
 }
 
-import type { Product } from "@/features/products/types";
-
-// Se llama desde el formulario de Producto al guardar, para mantener
-// sincronizado Collection.productIds con Product.collectionIds (relación bidireccional).
-export async function syncProductCollections(
-  productId: string,
-  collectionIds: CollectionId[]
-): Promise<void> {
-  collectionsStore = collectionsStore.map((c) => {
-    const shouldHave = collectionIds.includes(c.id);
-    const has = c.productIds.includes(productId);
-    if (shouldHave && !has) return { ...c, productIds: [...c.productIds, productId] };
-    if (!shouldHave && has) return { ...c, productIds: c.productIds.filter((id) => id !== productId) };
-    return c;
+export async function setDefaultCollection(id: string): Promise<Collection> {
+  const updated = await apiFetch<ApiCollection>(`Collections/${id}/set-default`, {
+    method: "POST",
   });
-  return delay(undefined);
+  return adaptCollection(updated);
+}
+
+export async function deleteCollection(id: string): Promise<void> {
+  await apiFetch<void>(`Collections/${id}`, { method: "DELETE" });
 }

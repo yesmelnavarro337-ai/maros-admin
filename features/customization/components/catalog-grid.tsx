@@ -1,36 +1,29 @@
 "use client";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "@/lib/toast";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogItemCard } from "./catalog-item-card";
 import { CatalogItemDialog } from "./catalog-item-dialog";
 import {
-  getCatalogItems,
   createCatalogItem,
   updateCatalogItem,
   deleteCatalogItem,
 } from "../services/customization.service";
 import type { CatalogConfig, CatalogItem } from "../types";
 
-export function CatalogGrid({ config }: { config: CatalogConfig }) {
-  const [items, setItems] = useState<CatalogItem[]>([]);
-  const [loading, setLoading] = useState(true);
+interface CatalogGridProps {
+  config: CatalogConfig;
+  items: CatalogItem[];
+  loading: boolean;
+  onChanged: () => Promise<void>;
+}
+
+export function CatalogGrid({ config, items, loading, onChanged }: CatalogGridProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
-
-  const fetchItems = useCallback(async () => {
-    setLoading(true);
-    const data = await getCatalogItems(config.key);
-    setItems(data);
-    setLoading(false);
-  }, [config.key]);
-
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
 
   function openCreate() {
     setEditingItem(null);
@@ -42,27 +35,41 @@ export function CatalogGrid({ config }: { config: CatalogConfig }) {
     setDialogOpen(true);
   }
 
-  async function handleSave(data: { name: string; image?: string; hex?: string; priceModifier?: number }) {
+async function handleSave(data: { name: string; image?: string; hex?: string; priceModifier?: number }) {
+  try {
     if (editingItem) {
       await updateCatalogItem(editingItem.id, data);
+      toast.success(`${config.singularLabel} actualizado correctamente`);
     } else {
       await createCatalogItem({ catalog: config.key, ...data });
+      toast.success(`${config.singularLabel} creado correctamente`);
     }
-    fetchItems();
+    await onChanged();
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "No se pudo guardar.");
   }
+}
 
 const [deleteTarget, setDeleteTarget] = useState<CatalogItem | null>(null);
 
-function handleDeleteClick(item: CatalogItem) {
-  setDeleteTarget(item);
+async function handleDelete(id: string) {
+  const confirmed = window.confirm(`¿Eliminar este ${config.singularLabel}?`);
+  if (confirmed) {
+    try {
+      await deleteCatalogItem(id);
+      toast.success(`${config.singularLabel} eliminado`);
+      await onChanged();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar.");
+    }
+  }
 }
-
 async function confirmDelete() {
   if (!deleteTarget) return;
   await deleteCatalogItem(deleteTarget.id);
   toast.success(`"${deleteTarget.name}" fue eliminado`);
   setDeleteTarget(null);
-  fetchItems();
+  await onChanged();
 }
 
   return (
@@ -92,7 +99,7 @@ async function confirmDelete() {
               item={item}
               config={config}
               onEdit={() => openEdit(item)}
-              onDelete={() => handleDeleteClick(item)}
+              onDelete={() => handleDelete(item.id)}
             />
           ))}
         </div>

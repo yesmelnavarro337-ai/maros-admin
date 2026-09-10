@@ -3,6 +3,8 @@
 import { ImageOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { ProductColor, ProductVariant } from "../types";
+import { uploadImage } from "@/lib/api/media.service";
+import { toast } from "@/lib/toast";
 
 interface VariantMatrixProps {
   sizes: string[];
@@ -23,15 +25,14 @@ export function VariantMatrix({ sizes, colors, variants, onUpdateVariant }: Vari
   const findVariant = (size: string, colorName: string) =>
     variants.find((v) => v.size === size && v.colorName === colorName);
 
-  const handleImageUpload = (variantId: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        onUpdateVariant(variantId, { image: reader.result });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+async function handleImageUpload(variantId: string, file: File) {
+  try {
+    const result = await uploadImage(file, "products/variants");
+    onUpdateVariant(variantId, { image: result.url });
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "No se pudo subir la imagen.");
+  }
+}
 
   return (
     <div className="overflow-x-auto">

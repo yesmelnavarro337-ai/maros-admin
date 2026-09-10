@@ -15,6 +15,7 @@ import {
   UserCog,
   type LucideIcon,
   HelpCircle,
+  Mail,
 } from "lucide-react";
 
 export interface NavItem {
@@ -30,6 +31,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Temporadas", href: "/admin/temporadas", icon: CalendarRange },
   { label: "Personalización", href: "/admin/personalizacion", icon: Palette },
   { label: "Cotizaciones", href: "/admin/cotizaciones", icon: ClipboardList },
+  { label: "Mensajes de Contacto", href: "/admin/mensajes-contacto", icon: Mail },
   { label: "Clientes", href: "/admin/clientes", icon: Users },
   { label: "Galería", href: "/admin/galeria", icon: ImageIcon },
   { label: "Blog", href: "/admin/blog", icon: Newspaper },

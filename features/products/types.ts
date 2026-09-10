@@ -22,7 +22,8 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  category: string;
+  categoryId: string;
+  categoryName: string;
   description: string;
   basePrice: number;
   status: ProductStatus;
@@ -30,7 +31,7 @@ export interface Product {
   sizes: string[];
   colors: ProductColor[];
   variants: ProductVariant[];
-  collectionIds: CollectionId[];
+  collectionIds: string[];
   featuredHome: boolean;
   allowCustomization: boolean;
   deliveryTime: string;
@@ -40,11 +41,9 @@ export interface Product {
 
 export interface ProductFilters {
   search: string;
-  category: string;
+  categoryId: string;
   status: ProductStatus | "todos";
 }
-
-export const PRODUCT_CATEGORIES = ["Pijamas", "Batas", "Conjuntos", "Camisones"] as const;
 
 export const DELIVERY_TIME_OPTIONS = [
   "3-5 días hábiles",

@@ -8,7 +8,7 @@ export type QuotationStatus =
   | "archivada";
 
 export interface QuotationItem {
-  productId: string;
+  productId?: string;
   productName: string;
   modelo?: string;
   size?: string;
@@ -16,6 +16,7 @@ export interface QuotationItem {
   tela?: string;
   estampado?: string;
   bordado?: string;
+  embroideryText?: string;
   quantity: number;
 }
 
@@ -24,6 +25,7 @@ export interface Quotation {
   clientId: string;
   clientName: string;
   clientPhone: string;
+  clientCity: string;
   items: QuotationItem[];
   referenceImages: string[];
   status: QuotationStatus;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { Eye, ImageOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,9 +28,12 @@ export function SeasonPreviewModal({ season }: { season: Season }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Vista previa</Button>
-      </DialogTrigger>
+<DialogTrigger asChild>
+  <Button variant="ghost" className="text-muted-foreground">
+    <Eye className="h-4 w-4 mr-1.5" />
+    Vista previa
+  </Button>
+</DialogTrigger>
       <DialogContent className="max-w-2xl p-0 overflow-hidden">
         <DialogHeader className="p-4 pb-0">
           <DialogTitle>Vista previa — {season.name}</DialogTitle>

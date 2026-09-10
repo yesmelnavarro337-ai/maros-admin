@@ -49,7 +49,7 @@ export function ProductTable({ products, onQuickView, onDelete }: ProductTablePr
                   <span className="font-medium text-foreground">{product.name}</span>
                 </button>
               </TableCell>
-              <TableCell className="text-muted-foreground">{product.category}</TableCell>
+              <TableCell className="text-muted-foreground">{product.categoryName}</TableCell>
               <TableCell>${product.basePrice.toLocaleString("es-CO")}</TableCell>
               <TableCell className="text-muted-foreground">{totalStock}</TableCell>
               <TableCell>

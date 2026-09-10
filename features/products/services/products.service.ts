@@ -1,57 +1,177 @@
-import { mockProducts } from "../mocks/products.mock";
-import type { Product, ProductFilters } from "../types";
+import { apiFetch } from "@/lib/api/client-fetcher";
+import type { Product, ProductFilters, ProductStatus } from "../types";
 
-// Copia mutable en memoria. Se pierde al recargar — se reemplaza por
-// llamadas reales a Maros.Api en la fase de integración con backend.
-let productsStore: Product[] = [...mockProducts];
+interface PagedResult<T> {
+  items: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
 
-function delay<T>(data: T, ms = 300): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
+interface ApiProductVariant {
+  id: string;
+  size: string;
+  colorName: string;
+  colorHex: string;
+  sku: string;
+  stock: number;
+  imageUrl?: string | null;
+}
+
+interface ApiProduct {
+  id: string;
+  name: string;
+  slug: string;
+  categoryId: string;
+  categoryName: string;
+  description: string;
+  basePrice: number;
+  status: string;
+  featuredHome: boolean;
+  allowCustomization: boolean;
+  deliveryTime: string;
+  seoTitle: string;
+  seoDescription: string;
+  seoSlug: string;
+  seoSocialImageUrl?: string | null;
+  seoAltText?: string | null;
+  images: string[];
+  variants: ApiProductVariant[];
+  collectionIds: string[];
+  createdAt: string;
+}
+
+function statusToApi(status: ProductStatus): string {
+  return { activo: "Activo", borrador: "Borrador", archivado: "Archivado" }[status];
+}
+
+function statusFromApi(status: string): ProductStatus {
+  return (
+    { Activo: "activo", Borrador: "borrador", Archivado: "archivado" }[status] as ProductStatus
+  ) ?? "borrador";
+}
+
+function adaptProduct(p: ApiProduct): Product {
+  const sizes = Array.from(new Set(p.variants.map((v) => v.size)));
+  const colors = Array.from(
+    new Map(p.variants.map((v) => [v.colorName, { name: v.colorName, hex: v.colorHex }])).values()
+  );
+
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    categoryId: p.categoryId,
+    categoryName: p.categoryName,
+    description: p.description,
+    basePrice: p.basePrice,
+    status: statusFromApi(p.status),
+    images: p.images,
+    sizes,
+    colors,
+    variants: p.variants.map((v) => ({
+      id: v.id,
+      size: v.size,
+      colorName: v.colorName,
+      colorHex: v.colorHex,
+      sku: v.sku,
+      stock: v.stock,
+      image: v.imageUrl ?? undefined,
+    })),
+    collectionIds: p.collectionIds,
+    featuredHome: p.featuredHome,
+    allowCustomization: p.allowCustomization,
+    deliveryTime: p.deliveryTime,
+    seo: {
+      title: p.seoTitle,
+      description: p.seoDescription,
+      slug: p.seoSlug,
+      socialImage: p.seoSocialImageUrl ?? undefined,
+      altText: p.seoAltText ?? undefined,
+    },
+    createdAt: p.createdAt,
+  };
+}
+
+interface SaveProductPayload {
+  name: string;
+  categoryId: string;
+  description: string;
+  basePrice: number;
+  status: ProductStatus;
+  featuredHome: boolean;
+  allowCustomization: boolean;
+  deliveryTime: string;
+  seo: { title: string; description: string; socialImage?: string; altText?: string };
+  images: string[];
+  variants: { size: string; colorName: string; colorHex: string; sku: string; stock: number; image?: string }[];
+  collectionIds: string[];
+}
+
+function buildApiPayload(data: SaveProductPayload) {
+  return {
+    name: data.name,
+    categoryId: data.categoryId,
+    description: data.description,
+    basePrice: data.basePrice,
+    status: statusToApi(data.status),
+    featuredHome: data.featuredHome,
+    allowCustomization: data.allowCustomization,
+    deliveryTime: data.deliveryTime,
+    seoTitle: data.seo.title,
+    seoDescription: data.seo.description,
+    seoSocialImageUrl: data.seo.socialImage ?? null,
+    seoAltText: data.seo.altText ?? null,
+    imageUrls: data.images,
+    variants: data.variants.map((v) => ({
+      size: v.size,
+      colorName: v.colorName,
+      colorHex: v.colorHex,
+      sku: v.sku,
+      stock: v.stock,
+      imageUrl: v.image ?? null,
+    })),
+    collectionIds: data.collectionIds,
+  };
 }
 
 export async function getProducts(filters?: Partial<ProductFilters>): Promise<Product[]> {
-  let result = [...productsStore];
+  const params = new URLSearchParams();
+  params.set("pageSize", "100"); // el listado actual no pagina en UI todavía; se ajusta si migramos paginación visual más adelante
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.categoryId && filters.categoryId !== "todas") params.set("categoryId", filters.categoryId);
+  if (filters?.status && filters.status !== "todos") params.set("status", statusToApi(filters.status));
 
-  if (filters?.search) {
-    const q = filters.search.toLowerCase();
-    result = result.filter((p) => p.name.toLowerCase().includes(q));
-  }
-  if (filters?.category && filters.category !== "todas") {
-    result = result.filter((p) => p.category === filters.category);
-  }
-  if (filters?.status && filters.status !== "todos") {
-    result = result.filter((p) => p.status === filters.status);
-  }
-
-  return delay(result);
+  const result = await apiFetch<PagedResult<ApiProduct>>(`Products?${params.toString()}`);
+  return result.items.map(adaptProduct);
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
-  return delay(productsStore.find((p) => p.id === id));
+  try {
+    const product = await apiFetch<ApiProduct>(`Products/${id}`);
+    return adaptProduct(product);
+  } catch {
+    return undefined;
+  }
 }
 
-export async function createProduct(
-  data: Omit<Product, "id" | "slug" | "createdAt">
-): Promise<Product> {
-  const newProduct: Product = {
-    ...data,
-    id: `p${Date.now()}`,
-    slug: data.name.toLowerCase().replace(/\s+/g, "-"),
-    createdAt: new Date().toISOString().slice(0, 10),
-  };
-  productsStore = [newProduct, ...productsStore];
-  return delay(newProduct);
+export async function createProduct(data: SaveProductPayload): Promise<Product> {
+  const created = await apiFetch<ApiProduct>("Products", {
+    method: "POST",
+    body: buildApiPayload(data),
+  });
+  return adaptProduct(created);
 }
 
-export async function updateProduct(
-  id: string,
-  data: Partial<Product>
-): Promise<Product | undefined> {
-  productsStore = productsStore.map((p) => (p.id === id ? { ...p, ...data } : p));
-  return delay(productsStore.find((p) => p.id === id));
+export async function updateProduct(id: string, data: SaveProductPayload): Promise<Product | undefined> {
+  const updated = await apiFetch<ApiProduct>(`Products/${id}`, {
+    method: "PUT",
+    body: buildApiPayload(data),
+  });
+  return adaptProduct(updated);
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  productsStore = productsStore.filter((p) => p.id !== id);
-  return delay(undefined);
+  await apiFetch<void>(`Products/${id}`, { method: "DELETE" });
 }

@@ -1,13 +1,16 @@
 "use client";
 
-import { useRef } from "react";
-import { ImageOff, Upload } from "lucide-react";
+import { useRef, useState } from "react";
+import { ImageOff, Upload, Loader2 } from "lucide-react";
+import { uploadImage } from "@/lib/api/media.service";
+import { toast } from "@/lib/toast";
 
 interface SingleImageUploaderProps {
   label: string;
   value?: string;
   onChange: (value: string | undefined) => void;
   aspect?: "square" | "wide";
+  folder?: string;
 }
 
 export function SingleImageUploader({
@@ -15,17 +18,23 @@ export function SingleImageUploader({
   value,
   onChange,
   aspect = "wide",
+  folder = "general",
 }: SingleImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleFile = (file: File | undefined) => {
+  async function handleFile(file: File | undefined) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") onChange(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
+    setUploading(true);
+    try {
+      const result = await uploadImage(file, folder);
+      onChange(result.url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo subir la imagen.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div>
@@ -33,9 +42,12 @@ export function SingleImageUploader({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className={`relative w-full ${aspect === "wide" ? "aspect-[21/9]" : "aspect-square max-w-xs"} rounded-lg border-2 border-dashed border-border overflow-hidden flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-secondary/40`}
+        disabled={uploading}
+        className={`relative w-full ${aspect === "wide" ? "aspect-[21/9]" : "aspect-square max-w-xs"} rounded-lg border-2 border-dashed border-border overflow-hidden flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-secondary/40 disabled:opacity-60`}
       >
-        {value ? (
+        {uploading ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : value ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={value} alt={label} className="w-full h-full object-cover" />
         ) : (
@@ -45,7 +57,7 @@ export function SingleImageUploader({
           </>
         )}
       </button>
-      {value && (
+      {value && !uploading && (
         <button
           type="button"
           onClick={() => onChange(undefined)}
@@ -54,10 +66,10 @@ export function SingleImageUploader({
           Quitar imagen
         </button>
       )}
-      {!value && (
+      {!value && !uploading && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1.5">
           <ImageOff className="h-3 w-3" />
-          Se guarda localmente — Cloudinary se integra en la fase de backend.
+          Sin imagen todavía.
         </div>
       )}
       <input

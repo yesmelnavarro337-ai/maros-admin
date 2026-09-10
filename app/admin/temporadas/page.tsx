@@ -1,7 +1,5 @@
-import { getSeasons } from "@/features/seasons/services/seasons.service";
-import { SeasonGrid } from "@/features/seasons/components/season-grid";
+import { SeasonList } from "@/features/seasons/components/season-list";
 
-export default async function TemporadasPage() {
-  const seasons = await getSeasons();
-  return <SeasonGrid seasons={seasons} />;
+export default function TemporadasPage() {
+  return <SeasonList />;
 }

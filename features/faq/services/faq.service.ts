@@ -1,41 +1,71 @@
-import { mockFaqItems } from "../mocks/faq.mock";
-import type { FaqItem } from "../types";
+import { apiFetch } from "@/lib/api/client-fetcher";
+import type { FaqItem, FaqStatus } from "../types";
 
-let store: FaqItem[] = [...mockFaqItems];
+interface ApiFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  order: number;
+  status: string;
+}
 
-function delay<T>(data: T, ms = 250): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
+const STATUS_FROM_API: Record<string, FaqStatus> = {
+  Publicada: "publicada",
+  Borrador: "borrador",
+};
+
+const STATUS_TO_API: Record<FaqStatus, string> = {
+  publicada: "Publicada",
+  borrador: "Borrador",
+};
+
+function adaptFaq(f: ApiFaqItem): FaqItem {
+  return {
+    id: f.id,
+    question: f.question,
+    answer: f.answer,
+    category: f.category,
+    order: f.order,
+    status: STATUS_FROM_API[f.status] ?? "borrador",
+  };
 }
 
 export async function getFaqItems(): Promise<FaqItem[]> {
-  return delay([...store].sort((a, b) => a.order - b.order));
+  const items = await apiFetch<ApiFaqItem[]>("Faq");
+  return items.map(adaptFaq);
 }
 
-export async function createFaqItem(data: Omit<FaqItem, "id" | "order">): Promise<FaqItem> {
-  const newItem: FaqItem = { ...data, id: `f${Date.now()}`, order: store.length + 1 };
-  store = [...store, newItem];
-  return delay(newItem);
+export async function createFaqItem(data: { question: string; answer: string; category: string; status: FaqStatus }): Promise<FaqItem> {
+  const created = await apiFetch<ApiFaqItem>("Faq", {
+    method: "POST",
+    body: {
+      question: data.question,
+      answer: data.answer,
+      category: data.category,
+      status: STATUS_TO_API[data.status],
+    },
+  });
+  return adaptFaq(created);
 }
 
-export async function updateFaqItem(id: string, data: Partial<FaqItem>): Promise<FaqItem | undefined> {
-  store = store.map((item) => (item.id === id ? { ...item, ...data } : item));
-  return delay(store.find((item) => item.id === id));
+export async function updateFaqItem(id: string, data: { question: string; answer: string; category: string; status: FaqStatus }): Promise<FaqItem | undefined> {
+  const updated = await apiFetch<ApiFaqItem>(`Faq/${id}`, {
+    method: "PUT",
+    body: {
+      question: data.question,
+      answer: data.answer,
+      category: data.category,
+      status: STATUS_TO_API[data.status],
+    },
+  });
+  return adaptFaq(updated);
 }
 
 export async function deleteFaqItem(id: string): Promise<void> {
-  store = store.filter((item) => item.id !== id);
-  return delay(undefined);
+  await apiFetch<void>(`Faq/${id}`, { method: "DELETE" });
 }
 
 export async function reorderFaqItem(id: string, direction: "up" | "down"): Promise<void> {
-  const sorted = [...store].sort((a, b) => a.order - b.order);
-  const index = sorted.findIndex((item) => item.id === id);
-  const targetIndex = direction === "up" ? index - 1 : index + 1;
-  if (targetIndex < 0 || targetIndex >= sorted.length) return delay(undefined);
-
-  const currentOrder = sorted[index].order;
-  sorted[index].order = sorted[targetIndex].order;
-  sorted[targetIndex].order = currentOrder;
-  store = sorted;
-  return delay(undefined);
+  await apiFetch<void>(`Faq/${id}/reorder?direction=${direction}`, { method: "PUT" });
 }

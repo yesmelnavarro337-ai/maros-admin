@@ -1,32 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { ImageOff, Pencil, Copy, Eye, MoreVertical } from "lucide-react";
+import { ImageOff, Pencil, Trash2, Eye, MoreVertical, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "@/lib/toast";
 import type { Collection } from "../types";
 
 interface CollectionCardProps {
   collection: Collection;
   onPreview: () => void;
+  onDelete: () => void;
 }
 
-export function CollectionCard({ collection, onPreview }: CollectionCardProps) {
-  function handleDuplicate(e: React.MouseEvent) {
-    e.preventDefault();
-    toast.info("Duplicar colecciones estará disponible cuando conectemos el backend");
-  }
-
+export function CollectionCard({ collection, onPreview, onDelete }: CollectionCardProps) {
   function handlePreview(e: React.MouseEvent) {
     e.preventDefault();
     onPreview();
+  }
+
+  function handleDelete(e: React.MouseEvent) {
+    e.preventDefault();
+    onDelete();
   }
 
   return (
@@ -46,7 +47,13 @@ export function CollectionCard({ collection, onPreview }: CollectionCardProps) {
           style={{ backgroundColor: collection.accentHex }}
         />
 
-        {/* Desktop: hover overlay */}
+        {collection.isDefault && (
+          <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground gap-1">
+            <Star className="h-3 w-3 fill-current" />
+            Predeterminada
+          </Badge>
+        )}
+
         <div className="hidden sm:flex absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-2">
           <Button asChild size="sm" variant="secondary">
             <Link href={`/admin/colecciones/${collection.id}`}>
@@ -54,17 +61,15 @@ export function CollectionCard({ collection, onPreview }: CollectionCardProps) {
               Editar
             </Link>
           </Button>
-          <Button size="sm" variant="secondary" onClick={handleDuplicate}>
-            <Copy className="h-3.5 w-3.5 mr-1.5" />
-            Duplicar
-          </Button>
           <Button size="sm" variant="secondary" onClick={handlePreview}>
             <Eye className="h-3.5 w-3.5 mr-1.5" />
             Vista previa
           </Button>
+          <Button size="sm" variant="secondary" onClick={handleDelete}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
 
-        {/* Mobile: dropdown menu */}
         <div className="sm:hidden absolute top-2 right-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
@@ -79,13 +84,13 @@ export function CollectionCard({ collection, onPreview }: CollectionCardProps) {
                   Editar
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDuplicate}>
-                <Copy className="h-3.5 w-3.5 mr-2" />
-                Duplicar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePreview}>
+              <DropdownMenuItem onClick={onPreview}>
                 <Eye className="h-3.5 w-3.5 mr-2" />
                 Vista previa
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDelete}>
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

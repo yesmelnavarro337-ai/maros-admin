@@ -5,33 +5,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PRODUCT_CATEGORIES } from "../types";
+import { useCategories } from "@/features/categories/hooks/use-categories";
 import type { ProductStatus } from "../types";
 
 interface ProductFiltersProps {
-  category: string;
+  categoryId: string;
   status: ProductStatus | "todos";
   onCategoryChange: (value: string) => void;
   onStatusChange: (value: ProductStatus | "todos") => void;
 }
 
 export function ProductFilters({
-  category,
+  categoryId,
   status,
   onCategoryChange,
   onStatusChange,
 }: ProductFiltersProps) {
+  const { categories, loading } = useCategories();
+
   return (
     <div className="flex gap-2">
-      <Select value={category} onValueChange={onCategoryChange}>
+      <Select value={categoryId} onValueChange={onCategoryChange} disabled={loading}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="Categoría" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="todas">Todas las categorías</SelectItem>
-          {PRODUCT_CATEGORIES.map((c) => (
-            <SelectItem key={c} value={c}>
-              {c}
+          {categories.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.name}
             </SelectItem>
           ))}
         </SelectContent>

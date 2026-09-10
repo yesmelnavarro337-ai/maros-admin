@@ -27,9 +27,14 @@ export function FaqList() {
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    const data = await getFaqItems();
-    setItems(data);
-    setLoading(false);
+    try {
+      const data = await getFaqItems();
+      setItems(data);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudieron cargar las preguntas.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -37,27 +42,39 @@ export function FaqList() {
   }, [fetchItems]);
 
   async function handleSave(data: { question: string; answer: string; category: string; status: FaqStatus }) {
-    if (editingItem) {
-      await updateFaqItem(editingItem.id, data);
-      toast.success("Pregunta actualizada");
-    } else {
-      await createFaqItem(data);
-      toast.success("Pregunta creada");
+    try {
+      if (editingItem) {
+        await updateFaqItem(editingItem.id, data);
+        toast.success("Pregunta actualizada");
+      } else {
+        await createFaqItem(data);
+        toast.success("Pregunta creada");
+      }
+      fetchItems();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar.");
     }
-    fetchItems();
   }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    await deleteFaqItem(deleteTarget.id);
-    toast.success("Pregunta eliminada");
-    setDeleteTarget(null);
-    fetchItems();
+    try {
+      await deleteFaqItem(deleteTarget.id);
+      toast.success("Pregunta eliminada");
+      setDeleteTarget(null);
+      fetchItems();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar.");
+    }
   }
 
   async function handleReorder(id: string, direction: "up" | "down") {
-    await reorderFaqItem(id, direction);
-    fetchItems();
+    try {
+      await reorderFaqItem(id, direction);
+      fetchItems();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo reordenar.");
+    }
   }
 
   return (

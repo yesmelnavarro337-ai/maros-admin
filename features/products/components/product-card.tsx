@@ -78,7 +78,7 @@ export function ProductCard({ product, onQuickView, onDelete }: ProductCardProps
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-            <p className="text-xs text-muted-foreground">{product.category}</p>
+            <p className="text-xs text-muted-foreground">{product.categoryId}</p>
           </div>
           <ProductStatusBadge status={product.status} />
         </div>

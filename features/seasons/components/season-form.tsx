@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,8 @@ import { SeasonColorEditor } from "./season-color-editor";
 import { SeasonPreviewModal } from "./season-preview-modal";
 import { SingleImageUploader } from "@/components/shared/single-image-uploader";
 import { ProductPicker } from "@/features/collections/components/product-picker";
-import { mockCollections } from "@/features/collections/mocks/collections.mock";
+import { getCollections } from "@/features/collections/services/collections.service";
+import type { Collection } from "@/features/collections/types";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
 import { Trash2, Sparkles } from "lucide-react";
 import type { Season, SeasonColors } from "../types";
 import type { CollectionId } from "@/features/collections/types";
+import { toast } from "@/lib/toast";
 
 interface SeasonFormProps {
   mode: "create" | "edit";
@@ -51,12 +53,20 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
     initialData?.featuredProductIds ?? []
   );
   const [activating, setActivating] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
+const [loadingCollections, setLoadingCollections] = useState(true);
+
+useEffect(() => {
+  getCollections()
+    .then(setCollections)
+    .finally(() => setLoadingCollections(false));
+}, []);
 
   const form = useForm<SeasonFormValues>({
     resolver: zodResolver(seasonSchema),
     defaultValues: {
       name: initialData?.name ?? "",
-      collectionId: initialData?.collectionId ?? "general",
+      collectionId: initialData?.collectionId ?? "",
       startDate: initialData?.startDate ?? "",
       endDate: initialData?.endDate ?? "",
       heroTitle: initialData?.heroTitle ?? "",
@@ -66,21 +76,27 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
     },
   });
 
-  const selectedCollectionId = form.watch("collectionId") as CollectionId;
-  const collectionProductIds =
-    mockCollections.find((c) => c.id === selectedCollectionId)?.productIds ?? [];
+const selectedCollectionId = form.watch("collectionId");
+const collectionProductIds =
+  collections.find((c) => c.id === selectedCollectionId)?.productIds ?? [];
 
-  async function onSubmit(values: SeasonFormValues) {
-    const payload = { ...values, heroImage, bannerImage, colors, featuredProductIds };
+async function onSubmit(values: SeasonFormValues) {
+  const payload = { ...values, heroImage, bannerImage, colors, featuredProductIds };
 
+  try {
     if (mode === "create") {
       const created = await createSeason(payload);
+      toast.success("Temporada creada correctamente");
       router.push(`/admin/temporadas/${created.id}`);
     } else if (initialData) {
       await updateSeason(initialData.id, payload);
+      toast.success("Temporada actualizada correctamente");
       router.push("/admin/temporadas");
     }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "No se pudo guardar la temporada.");
   }
+}
 
   async function handleActivate() {
     if (!initialData) return;
@@ -90,14 +106,16 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
     router.refresh();
   }
 
-  async function handleDelete() {
-    if (!initialData) return;
-    const confirmed = window.confirm(`¿Eliminar la temporada "${initialData.name}"?`);
-    if (confirmed) {
-      await deleteSeason(initialData.id);
-      router.push("/admin/temporadas");
-    }
+async function handleDelete() {
+  if (!initialData) return;
+  try {
+    await deleteSeason(initialData.id);
+    toast.success(`Temporada "${initialData.name}" eliminada`);
+    router.push("/admin/temporadas");
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "No se pudo eliminar la temporada.");
   }
+}
 
   return (
     <Form {...form}>
@@ -155,20 +173,20 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Colección vinculada</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {mockCollections.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+<Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingCollections}>
+  <FormControl>
+    <SelectTrigger>
+      <SelectValue placeholder="Selecciona una colección" />
+    </SelectTrigger>
+  </FormControl>
+  <SelectContent>
+    {collections.map((c) => (
+      <SelectItem key={c.id} value={c.id}>
+        {c.name}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                   <FormMessage />
                 </FormItem>
               )}

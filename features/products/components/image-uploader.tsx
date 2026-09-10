@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import { Plus, X, ImageOff } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, X, ImageOff, Loader2 } from "lucide-react";
+import { uploadImage } from "@/lib/api/media.service";
+import { toast } from "@/lib/toast";
 
 interface ImageUploaderProps {
   images: string[];
@@ -11,21 +13,23 @@ interface ImageUploaderProps {
 
 export function ImageUploader({ images, onChange, max = 6 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleFiles = (files: FileList | null) => {
+  async function handleFiles(files: FileList | null) {
     if (!files) return;
-    Array.from(files)
-      .slice(0, max - images.length)
-      .forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            onChange([...images, reader.result]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-  };
+    const toUpload = Array.from(files).slice(0, max - images.length);
+    if (toUpload.length === 0) return;
+
+    setUploading(true);
+    try {
+      const results = await Promise.all(toUpload.map((file) => uploadImage(file, "products")));
+      onChange([...images, ...results.map((r) => r.url)]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudieron subir las imágenes.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const removeAt = (index: number) => {
     onChange(images.filter((_, i) => i !== index));
@@ -50,10 +54,17 @@ export function ImageUploader({ images, onChange, max = 6 }: ImageUploaderProps)
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="aspect-square rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+          disabled={uploading}
+          className="aspect-square rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
         >
-          <Plus className="h-5 w-5" />
-          <span className="text-xs">Agregar</span>
+          {uploading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <Plus className="h-5 w-5" />
+              <span className="text-xs">Agregar</span>
+            </>
+          )}
         </button>
       )}
       <input
@@ -64,10 +75,10 @@ export function ImageUploader({ images, onChange, max = 6 }: ImageUploaderProps)
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
-      {images.length === 0 && (
+      {images.length === 0 && !uploading && (
         <div className="col-span-full flex items-center gap-2 text-xs text-muted-foreground">
           <ImageOff className="h-3.5 w-3.5" />
-          Sin imágenes todavía. Se guardan localmente en el navegador — Cloudinary se integra en la fase de backend.
+          Sin imágenes todavía.
         </div>
       )}
     </div>

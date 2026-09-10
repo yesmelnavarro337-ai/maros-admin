@@ -1,32 +1,44 @@
 import Link from "next/link";
-import { Plus, Layers, ClipboardList } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Layers, Sparkles, MessageCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const actions = [
-  { label: "Nuevo producto", href: "/admin/productos/nuevo", icon: Plus },
-  { label: "Nueva colección", href: "/admin/colecciones", icon: Layers },
-  { label: "Ver cotizaciones", href: "/admin/cotizaciones", icon: ClipboardList },
-];
+interface QuickActionsProps {
+  whatsappNumber: string;
+  whatsappMessage: string;
+}
 
-export function QuickActions() {
+export function QuickActions({ whatsappNumber, whatsappMessage }: QuickActionsProps) {
+  const cleanPhone = whatsappNumber.replace(/\D/g, "");
+  const whatsappHref = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">Acciones rápidas</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        {actions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Button key={action.href} variant="secondary" className="justify-start" asChild>
-              <Link href={action.href}>
-                <Icon className="h-4 w-4 mr-2" />
-                {action.label}
-              </Link>
-            </Button>
-          );
-        })}
+      <CardContent className="pt-4 pb-4 flex flex-wrap gap-2">
+        <Button variant="secondary" asChild>
+          <Link href="/admin/productos/nuevo">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo producto
+          </Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <Link href="/admin/colecciones">
+            <Layers className="h-4 w-4 mr-2" />
+            Crear colección
+          </Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <Link href="/admin/temporadas">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Activar temporada
+          </Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Ver WhatsApp
+          </a>
+        </Button>
       </CardContent>
     </Card>
   );

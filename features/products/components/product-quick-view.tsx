@@ -61,7 +61,7 @@ export function ProductQuickView({ product, onOpenChange }: ProductQuickViewProp
           <div className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Categoría</span>
-              <span className="text-foreground">{product.category}</span>
+              <span className="text-foreground">{product.categoryId}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Colecciones</span>

@@ -1,33 +1,130 @@
-import { mockCatalogItems } from "../mocks/customization.mock";
+import { apiFetch } from "@/lib/api/client-fetcher";
 import type { CatalogItem, CatalogKey } from "../types";
 
-let store: CatalogItem[] = [...mockCatalogItems];
+interface ApiCustomizationOption {
+  id: string;
+  catalogType: string;
+  name: string;
+  imageUrl?: string | null;
+  colorHex?: string | null;
+  priceModifier?: number | null;
+  active: boolean;
+}
 
-function delay<T>(data: T, ms = 250): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
+const CATALOG_TO_API: Record<CatalogKey, string> = {
+  modelos: "Modelo",
+  telas: "Tela",
+  colores: "Color",
+  estampados: "Estampado",
+  bordados: "Bordado",
+  tallas: "Talla",
+};
+
+const API_TO_CATALOG: Record<string, CatalogKey> = {
+  Modelo: "modelos",
+  Tela: "telas",
+  Color: "colores",
+  Estampado: "estampados",
+  Bordado: "bordados",
+  Talla: "tallas",
+};
+
+export type CustomizationCatalogs = Record<CatalogKey, CatalogItem[]>;
+
+let cachedCatalogs: CustomizationCatalogs | null = null;
+let pendingCatalogs: Promise<CustomizationCatalogs> | null = null;
+
+function adaptItem(o: ApiCustomizationOption): CatalogItem {
+  return {
+    id: o.id,
+    catalog: API_TO_CATALOG[o.catalogType] ?? "modelos",
+    name: o.name,
+    image: o.imageUrl ?? undefined,
+    hex: o.colorHex ?? undefined,
+    priceModifier: o.priceModifier ?? undefined,
+  };
+}
+
+function groupCatalogs(options: ApiCustomizationOption[]): CustomizationCatalogs {
+  const catalogs: CustomizationCatalogs = {
+    modelos: [],
+    telas: [],
+    colores: [],
+    estampados: [],
+    bordados: [],
+    tallas: [],
+  };
+
+  for (const option of options) {
+    const catalog = API_TO_CATALOG[option.catalogType];
+    if (catalog) catalogs[catalog].push(adaptItem(option));
+  }
+
+  return catalogs;
+}
+
+// El backend entrega todos los tipos juntos. Compartimos una sola lectura entre
+// pestañas y la invalidamos explícitamente después de una mutación.
+export async function getCustomizationCatalogs(force = false): Promise<CustomizationCatalogs> {
+  if (!force && cachedCatalogs) return cachedCatalogs;
+  if (!force && pendingCatalogs) return pendingCatalogs;
+
+  const request = apiFetch<ApiCustomizationOption[]>("CustomizationOptions").then(groupCatalogs);
+  if (!force) pendingCatalogs = request;
+
+  try {
+    const catalogs = await request;
+    cachedCatalogs = catalogs;
+    return catalogs;
+  } finally {
+    if (pendingCatalogs === request) pendingCatalogs = null;
+  }
 }
 
 export async function getCatalogItems(catalog: CatalogKey): Promise<CatalogItem[]> {
-  return delay(store.filter((item) => item.catalog === catalog));
+  const catalogs = await getCustomizationCatalogs();
+  return catalogs[catalog];
 }
 
 export async function createCatalogItem(
   data: Omit<CatalogItem, "id">
 ): Promise<CatalogItem> {
-  const newItem: CatalogItem = { ...data, id: `${data.catalog}-${Date.now()}` };
-  store = [...store, newItem];
-  return delay(newItem);
+  const created = await apiFetch<ApiCustomizationOption>("CustomizationOptions", {
+    method: "POST",
+    body: {
+      catalogType: CATALOG_TO_API[data.catalog],
+      name: data.name,
+      imageUrl: data.image ?? null,
+      colorHex: data.hex ?? null,
+      priceModifier: data.priceModifier ?? null,
+    },
+  });
+  cachedCatalogs = null;
+  return adaptItem(created);
 }
 
 export async function updateCatalogItem(
   id: string,
   data: Partial<CatalogItem>
 ): Promise<CatalogItem | undefined> {
-  store = store.map((item) => (item.id === id ? { ...item, ...data } : item));
-  return delay(store.find((item) => item.id === id));
+  // El backend valida las reglas por tipo usando el catalogType YA guardado
+  // del ítem (no se puede cambiar el tipo de un ítem existente) — el DTO de
+  // update solo necesita name/imageUrl/colorHex/priceModifier/active.
+  const updated = await apiFetch<ApiCustomizationOption>(`CustomizationOptions/${id}`, {
+    method: "PUT",
+    body: {
+      name: data.name,
+      imageUrl: data.image ?? null,
+      colorHex: data.hex ?? null,
+      priceModifier: data.priceModifier ?? null,
+      active: true,
+    },
+  });
+  cachedCatalogs = null;
+  return adaptItem(updated);
 }
 
 export async function deleteCatalogItem(id: string): Promise<void> {
-  store = store.filter((item) => item.id !== id);
-  return delay(undefined);
+  await apiFetch<void>(`CustomizationOptions/${id}`, { method: "DELETE" });
+  cachedCatalogs = null;
 }
