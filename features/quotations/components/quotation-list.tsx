@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -13,14 +14,13 @@ import { ContentCard } from "@/components/shared/content-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { getQuotations } from "../services/quotations.service";
 import { QuotationTable } from "./quotation-table";
-import { QuotationDetailPanel } from "./quotation-detail-panel";
 import { QUOTATION_STATUSES } from "../types";
 import type { Quotation, QuotationStatus } from "../types";
 
 export function QuotationList() {
+  const router = useRouter();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Quotation | null>(null);
   const [statusFilter, setStatusFilter] = useState<QuotationStatus | "todos">("todos");
 
 useEffect(() => {
@@ -30,9 +30,8 @@ useEffect(() => {
   });
 }, []);
 
-  function handleStatusChange(id: string, status: QuotationStatus) {
-    setQuotations((prev) => prev.map((q) => (q.id === id ? { ...q, status } : q)));
-    setSelected((prev) => (prev && prev.id === id ? { ...prev, status } : prev));
+  function openDetail(id: string) {
+    router.push(`/admin/cotizaciones/${id}`);
   }
 
   const filtered =
@@ -65,15 +64,9 @@ useEffect(() => {
             <Skeleton className="h-72 w-full rounded-lg" />
           </div>
         ) : (
-          <QuotationTable quotations={filtered} onRowClick={setSelected} />
+          <QuotationTable quotations={filtered} onRowClick={(q) => openDetail(q.id)} />
         )}
       </ContentCard>
-
-      <QuotationDetailPanel
-        quotation={selected}
-        onOpenChange={(open) => !open && setSelected(null)}
-        onStatusChange={handleStatusChange}
-      />
     </div>
   );
 }

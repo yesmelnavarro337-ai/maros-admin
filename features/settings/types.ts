@@ -1,3 +1,5 @@
+import type { HomeSection } from "@/features/appearance/types";
+
 export interface GeneralSettings {
   siteName: string;
   description: string;
@@ -6,6 +8,11 @@ export interface GeneralSettings {
   language: string;
   maintenanceMode: boolean;
   logo?: string;
+}
+
+export interface AppearanceSettingsSection {
+  favicon?: string;
+  homeSections: HomeSection[];
 }
 
 export interface SocialSettings {
@@ -69,6 +76,7 @@ export interface SiteSettings {
   domain: DomainSettings;
   backups: BackupSettings;
   security: SecuritySettings;
+  appearance: AppearanceSettingsSection;
 }
 
 export type SettingsSectionKey =

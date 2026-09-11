@@ -40,20 +40,20 @@ export function RecentQuotationsTable({ quotations }: { quotations: RecentQuotat
           <p className="text-sm text-muted-foreground">Sin cotizaciones todavía.</p>
         ) : (
           quotations.map((q) => (
-            <div key={q.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+            <Link key={q.id} href={`/admin/cotizaciones/${q.id}`} className="group flex items-center gap-3 py-2 border-b border-border last:border-0 hover:bg-accent/40 rounded-md px-2 -mx-2 transition-colors">
               <Avatar className="h-8 w-8 shrink-0">
                 <AvatarFallback className="bg-accent text-accent-foreground text-xs">
                   {initials(q.clientName)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-foreground truncate">{q.clientName}</p>
+                <p className="text-sm text-foreground truncate group-hover:underline">{q.clientName}</p>
                 <p className="text-xs text-muted-foreground truncate">
                   {q.productSummary} · {formatDate(q.date)}
                 </p>
               </div>
               <Badge variant="secondary">{STATUS_LABELS[q.status] ?? q.status}</Badge>
-            </div>
+            </Link>
           ))
         )}
       </CardContent>

@@ -1,5 +1,13 @@
 import { apiFetch } from "@/lib/api/client-fetcher";
 import type { SiteSettings } from "../types";
+import type { HomeSection } from "@/features/appearance/types";
+
+interface ApiHomeSectionDto {
+  id: string;
+  label: string;
+  enabled: boolean;
+  order: number;
+}
 
 interface ApiSiteSettings {
   siteName: string;
@@ -9,6 +17,8 @@ interface ApiSiteSettings {
   language: string;
   maintenanceMode: boolean;
   logoUrl?: string | null;
+  faviconUrl?: string | null;
+  homeSections?: ApiHomeSectionDto[] | null;
   instagram?: string | null;
   facebook?: string | null;
   tikTok?: string | null;
@@ -33,6 +43,15 @@ interface ApiSiteSettings {
   twoFactorEnabled: boolean;
   sessionTimeoutMinutes: number;
 }
+
+const DEFAULT_HOME_SECTIONS: HomeSection[] = [
+  { id: "hero", label: "Hero principal", enabled: true, order: 1 },
+  { id: "active-season", label: "Colección / Temporada activa", enabled: true, order: 2 },
+  { id: "featured-products", label: "Productos destacados", enabled: true, order: 3 },
+  { id: "testimonials", label: "Testimonios", enabled: true, order: 4 },
+  { id: "blog", label: "Últimos artículos del blog", enabled: false, order: 5 },
+  { id: "newsletter", label: "Suscripción por correo", enabled: false, order: 6 },
+];
 
 function adaptSettings(s: ApiSiteSettings): SiteSettings {
   return {
@@ -86,6 +105,10 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
       twoFactorEnabled: s.twoFactorEnabled,
       sessionTimeoutMinutes: s.sessionTimeoutMinutes,
     },
+    appearance: {
+      favicon: s.faviconUrl ?? undefined,
+      homeSections: s.homeSections ?? DEFAULT_HOME_SECTIONS,
+    },
   };
 }
 
@@ -98,6 +121,8 @@ function buildApiPayload(settings: SiteSettings) {
     language: settings.general.language,
     maintenanceMode: settings.general.maintenanceMode,
     logoUrl: settings.general.logo ?? null,
+    faviconUrl: settings.appearance.favicon ?? null,
+    homeSections: settings.appearance.homeSections,
 
     instagram: settings.social.instagram || null,
     facebook: settings.social.facebook || null,

@@ -101,6 +101,7 @@ export function ProductList() {
       <ProductQuickView
         product={quickViewProduct}
         onOpenChange={(open) => !open && setQuickViewProduct(null)}
+        onStatusChange={fetchProducts}
       />
 
       <ConfirmDialog

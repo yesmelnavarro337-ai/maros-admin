@@ -12,26 +12,24 @@ interface ApiGalleryImage {
 }
 
 const CATEGORY_TO_API: Record<GalleryCategory, string> = {
-  Familia: "Familia",
+  "Clientes reales": "ClientesReales",
+  Navidad: "Navidad",
   Parejas: "Parejas",
-  Niños: "Ninos",
-  Batas: "Batas",
-  Empresas: "Empresas",
+  "Detalles de bordado": "DetallesBordado",
 };
 
 const CATEGORY_FROM_API: Record<string, GalleryCategory> = {
-  Familia: "Familia",
+  ClientesReales: "Clientes reales",
+  Navidad: "Navidad",
   Parejas: "Parejas",
-  Ninos: "Niños",
-  Batas: "Batas",
-  Empresas: "Empresas",
+  DetallesBordado: "Detalles de bordado",
 };
 
 function adaptImage(i: ApiGalleryImage): GalleryImage {
   return {
     id: i.id,
     url: i.url,
-    category: CATEGORY_FROM_API[i.category] ?? "Familia",
+    category: CATEGORY_FROM_API[i.category] ?? "Clientes reales",
     caption: i.caption,
   };
 }

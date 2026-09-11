@@ -10,6 +10,7 @@ export type QuotationStatus =
 export interface QuotationItem {
   productId?: string;
   productName: string;
+  productImage?: string;
   modelo?: string;
   size?: string;
   color?: string;
@@ -17,6 +18,7 @@ export interface QuotationItem {
   estampado?: string;
   bordado?: string;
   embroideryText?: string;
+  estimatedUnitPrice: number;
   quantity: number;
 }
 

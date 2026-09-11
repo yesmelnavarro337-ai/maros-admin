@@ -1,4 +1,4 @@
-import { ClipboardList, Users, ShoppingBag, FileText } from "lucide-react";
+import { ClipboardList, Users, ShoppingBag, FileText, CalendarRange, CalendarDays } from "lucide-react";
 import { serverApiFetch } from "@/lib/api/server-client";
 import type {
   DashboardData,
@@ -57,7 +57,7 @@ const QUOTATION_STATUSES: { value: string; label: string }[] = [
 ];
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const [statusCounts, customersPage, activeProductsPage, allActiveProducts, recentQuotationsPage, seasons] =
+  const [statusCounts, customersPage, activeProductsPage, allActiveProducts, allQuotationsPage, seasons] =
     await Promise.all([
       Promise.all(
         QUOTATION_STATUSES.map((s) =>
@@ -67,7 +67,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       serverApiFetch<PagedResult<unknown>>("Customers?pageSize=1"),
       serverApiFetch<PagedResult<unknown>>("Products?status=Activo&pageSize=1"),
       serverApiFetch<PagedResult<ApiProduct>>("Products?status=Activo&pageSize=100"),
-      serverApiFetch<PagedResult<ApiQuotation>>("Quotations?pageSize=5"),
+      serverApiFetch<PagedResult<ApiQuotation>>("Quotations?pageSize=500"),
       serverApiFetch<ApiSeason[]>("Seasons"),
     ]);
 
@@ -82,10 +82,19 @@ export async function getDashboardData(): Promise<DashboardData> {
   const aceptadasCount = quotationsByStatus.find((s) => s.status === "Aceptada")?.count ?? 0;
   const acceptanceRate = totalQuotations > 0 ? Math.round((aceptadasCount / totalQuotations) * 100) : 0;
 
+  const quotesByDate = allQuotationsPage.items.map((q) => new Date(q.createdAt).getTime());
+  const nowMs = Date.now();
+  const weekStartMs = nowMs - 7 * 24 * 60 * 60 * 1000;
+  const monthStartMs = new Date().setDate(1);
+  const quotationsThisWeek = quotesByDate.filter((t) => t >= weekStartMs).length;
+  const quotationsThisMonth = quotesByDate.filter((t) => t >= monthStartMs).length;
+
   const stats: DashboardStat[] = [
-    { id: "quotations-new", label: "Cotizaciones nuevas", value: String(nuevasCount), icon: ClipboardList },
-    { id: "customers", label: "Clientes registrados", value: String(customersPage.totalCount), icon: Users },
+    { id: "quotations-week", label: "Cotizaciones esta semana", value: String(quotationsThisWeek), icon: CalendarRange },
+    { id: "quotations-month", label: "Cotizaciones este mes", value: String(quotationsThisMonth), icon: CalendarDays },
+    { id: "quotations-new", label: "Cotizaciones pendientes", value: String(nuevasCount), icon: ClipboardList },
     { id: "products", label: "Productos activos", value: String(activeProductsPage.totalCount), icon: ShoppingBag },
+    { id: "customers", label: "Clientes registrados", value: String(customersPage.totalCount), icon: Users },
     { id: "quotations-total", label: "Cotizaciones totales", value: String(totalQuotations), icon: FileText },
   ];
 
@@ -99,7 +108,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     .sort((a, b) => a.totalStock - b.totalStock)
     .slice(0, 5);
 
-  const recentQuotations: RecentQuotationRow[] = recentQuotationsPage.items.map((q) => ({
+  const recentQuotations: RecentQuotationRow[] = allQuotationsPage.items.slice(0, 5).map((q) => ({
     id: q.id,
     clientName: q.customerName,
     productSummary:

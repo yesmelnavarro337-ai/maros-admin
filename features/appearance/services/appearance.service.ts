@@ -1,17 +1,25 @@
-import { mockAppearanceSettings } from "../mocks/appearance.mock";
+import { getSiteSettings, updateSiteSettings } from "@/features/settings/services/settings.service";
 import type { AppearanceSettings } from "../types";
 
-let store: AppearanceSettings = { ...mockAppearanceSettings };
-
-function delay<T>(data: T, ms = 300): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
-}
-
 export async function getAppearanceSettings(): Promise<AppearanceSettings> {
-  return delay({ ...store });
+  const settings = await getSiteSettings();
+  return {
+    logo: settings.general.logo,
+    favicon: settings.appearance.favicon,
+    sections: settings.appearance.homeSections,
+  };
 }
 
-export async function updateAppearanceSettings(patch: Partial<AppearanceSettings>): Promise<AppearanceSettings> {
-  store = { ...store, ...patch };
-  return delay({ ...store });
+export async function updateAppearanceSettings(patch: AppearanceSettings): Promise<AppearanceSettings> {
+  const current = await getSiteSettings();
+  const updated = await updateSiteSettings({
+    ...current,
+    general: { ...current.general, logo: patch.logo },
+    appearance: { favicon: patch.favicon, homeSections: patch.sections },
+  });
+  return {
+    logo: updated.general.logo,
+    favicon: updated.appearance.favicon,
+    sections: updated.appearance.homeSections,
+  };
 }

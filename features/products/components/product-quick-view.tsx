@@ -10,17 +10,28 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/lib/toast";
 import { ProductStatusBadge } from "./product-status-badge";
 import { getCollections } from "@/features/collections/services/collections.service";
-import type { Product } from "../types";
+import { updateProductStatus } from "../services/products.service";
+import type { Product, ProductStatus } from "../types";
 
 interface ProductQuickViewProps {
   product: Product | null;
   onOpenChange: (open: boolean) => void;
+  onStatusChange?: () => void;
 }
 
-export function ProductQuickView({ product, onOpenChange }: ProductQuickViewProps) {
+export function ProductQuickView({ product, onOpenChange, onStatusChange }: ProductQuickViewProps) {
   const [collectionNames, setCollectionNames] = useState<string[]>([]);
+  const [changingStatus, setChangingStatus] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -33,6 +44,20 @@ export function ProductQuickView({ product, onOpenChange }: ProductQuickViewProp
   }, [product]);
 
   if (!product) return null;
+
+  async function handleStatusChange(status: ProductStatus) {
+    if (!product || status === product.status) return;
+    setChangingStatus(true);
+    try {
+      await updateProductStatus(product.id, status);
+      toast.success("Estado actualizado");
+      onStatusChange?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo cambiar el estado.");
+    } finally {
+      setChangingStatus(false);
+    }
+  }
 
   return (
     <Sheet open={!!product} onOpenChange={onOpenChange}>
@@ -59,7 +84,7 @@ export function ProductQuickView({ product, onOpenChange }: ProductQuickViewProp
           </div>
 
           <div className="flex flex-col gap-2 text-sm">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Categoría</span>
               <span className="text-foreground">{product.categoryId}</span>
             </div>
@@ -69,9 +94,27 @@ export function ProductQuickView({ product, onOpenChange }: ProductQuickViewProp
                 {collectionNames.length > 0 ? collectionNames.join(", ") : "Sin asignar"}
               </span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-1.5">
               <span className="text-muted-foreground">Estado</span>
-              <ProductStatusBadge status={product.status} />
+              <div className="flex items-center justify-between gap-3">
+                <ProductStatusBadge status={product.status} />
+                <div className="flex-1">
+                  <Select
+                    value={product.status}
+                    onValueChange={(v) => handleStatusChange(v as ProductStatus)}
+                    disabled={changingStatus}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="activo">Activo</SelectItem>
+                      <SelectItem value="borrador">Borrador</SelectItem>
+                      <SelectItem value="archivado">Archivado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
 

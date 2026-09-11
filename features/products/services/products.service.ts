@@ -175,3 +175,38 @@ export async function updateProduct(id: string, data: SaveProductPayload): Promi
 export async function deleteProduct(id: string): Promise<void> {
   await apiFetch<void>(`Products/${id}`, { method: "DELETE" });
 }
+
+export function toSavePayload(product: Product): SaveProductPayload {
+  return {
+    name: product.name,
+    categoryId: product.categoryId,
+    description: product.description,
+    basePrice: product.basePrice,
+    status: product.status,
+    featuredHome: product.featuredHome,
+    allowCustomization: product.allowCustomization,
+    deliveryTime: product.deliveryTime,
+    seo: {
+      title: product.seo.title ?? "",
+      description: product.seo.description ?? "",
+      socialImage: product.seo.socialImage,
+      altText: product.seo.altText,
+    },
+    images: product.images,
+    variants: product.variants.map((v) => ({
+      size: v.size,
+      colorName: v.colorName,
+      colorHex: v.colorHex,
+      sku: v.sku,
+      stock: v.stock,
+      image: v.image,
+    })),
+    collectionIds: product.collectionIds,
+  };
+}
+
+export async function updateProductStatus(id: string, status: ProductStatus): Promise<Product | undefined> {
+  const product = await getProductById(id);
+  if (!product) return undefined;
+  return updateProduct(id, { ...toSavePayload(product), status });
+}

@@ -19,6 +19,9 @@ const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "PUT", pattern: new RegExp(`^Products/${GUID}$`) },
   { method: "DELETE", pattern: new RegExp(`^Products/${GUID}$`) },
   { method: "GET", pattern: /^Categories$/ },
+  { method: "POST", pattern: /^Categories$/ },
+  { method: "PUT", pattern: new RegExp(`^Categories/${GUID}$`) },
+  { method: "DELETE", pattern: new RegExp(`^Categories/${GUID}$`) },
   { method: "POST", pattern: /^Media\/upload$/ },
   { method: "GET", pattern: /^Collections$/ },
   { method: "GET", pattern: new RegExp(`^Collections/${GUID}$`) },
@@ -73,6 +76,8 @@ const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "DELETE", pattern: new RegExp(`^Users/${GUID}$`) },
   { method: "GET", pattern: /^Settings$/ },
   { method: "PUT", pattern: /^Settings$/ },
+  { method: "GET", pattern: /^admin\/page-headers$/ },
+  { method: "PUT", pattern: /^admin\/page-headers\/[a-z]+$/ },
 
 ];
 export function isRouteAllowed(method: string, path: string): boolean {

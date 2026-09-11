@@ -6,23 +6,25 @@ interface PagedResult<T> {
   totalCount: number;
 }
 
-interface ApiQuotationOption {
+export interface ApiQuotationOption {
   id: string;
   catalogType: string;
   name: string;
 }
 
-interface ApiQuotationItem {
+export interface ApiQuotationItem {
   id: string;
   productId?: string | null;
   productName: string;
+  productImageUrl?: string | null;
   size: string;
   quantity: number;
   selectedOptions: ApiQuotationOption[];
   embroideryText?: string | null;
+  estimatedUnitPrice: number;
 }
 
-interface ApiQuotation {
+export interface ApiQuotation {
   id: string;
   customerId: string;
   customerName: string;
@@ -67,9 +69,11 @@ function adaptItem(i: ApiQuotationItem): QuotationItem {
   const item: QuotationItem = {
     productId: i.productId ?? undefined,
     productName: i.productName,
+    productImage: i.productImageUrl ?? undefined,
     size: i.size,
     quantity: i.quantity,
     embroideryText: i.embroideryText ?? undefined,
+    estimatedUnitPrice: i.estimatedUnitPrice,
   };
 
   for (const option of i.selectedOptions) {
@@ -80,7 +84,7 @@ function adaptItem(i: ApiQuotationItem): QuotationItem {
   return item;
 }
 
-function adaptQuotation(q: ApiQuotation): Quotation {
+export function adaptQuotation(q: ApiQuotation): Quotation {
   return {
     id: q.id,
     clientId: q.customerId,

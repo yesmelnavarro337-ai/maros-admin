@@ -1,3 +1,4 @@
+import "server-only";
 import { cookies } from "next/headers";
 import { API_URL, AUTH_COOKIE_NAME } from "./config";
 import { throwIfError } from "./errors";
