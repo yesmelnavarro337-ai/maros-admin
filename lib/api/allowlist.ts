@@ -83,8 +83,16 @@ const ALLOWED_ROUTES: AllowedRoute[] = [
 
 ];
 export function isRouteAllowed(method: string, path: string): boolean {
+  // 1. Elimina la barra inicial "/" si viene incluida
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+
+  // 2. Extrae solo la ruta sin parámetros de consulta (ej: "Auth/me?t=123" -> "Auth/me")
+  const pathWithoutQuery = cleanPath.split('?')[0];
+
   return ALLOWED_ROUTES.some(
-    (route) => route.method === method && route.pattern.test(path)
+    (route) =>
+      route.method === method.toUpperCase() &&
+      (route.pattern.test(cleanPath) || route.pattern.test(pathWithoutQuery))
   );
 }
 

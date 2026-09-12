@@ -125,7 +125,7 @@ async function handleToggleActive(checked: boolean) {
 
       <CollapsibleContent>
         <div className="border-t border-border px-4 py-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
 <SingleImageUploader label="Hero / Imagen" value={heroImage} onChange={setHeroImage} aspect="square" folder="seasons" />
 <SingleImageUploader label="Banner" value={bannerImage} onChange={setBannerImage} aspect="square" folder="seasons" />
             <SeasonColorTile colors={colors} onChange={setColors} />

@@ -90,7 +90,7 @@ export function BlogPostDialog({ open, onOpenChange, editingPost, onSave }: Blog
         <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título del artículo" className="text-lg font-medium" />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <div>
               <Label className="mb-1.5 block text-xs">URL amigable (generada automáticamente)</Label>
               <Input value={slugPreview} disabled className="text-muted-foreground bg-secondary/50" />

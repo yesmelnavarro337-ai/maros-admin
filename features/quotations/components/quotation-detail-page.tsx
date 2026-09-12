@@ -66,7 +66,6 @@ export function QuotationDetailPage({ quotation: initial }: { quotation: Quotati
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
 
   const total = quotation.items.reduce((sum, item) => sum + itemSubtotal(item), 0);
-  const whatsappPhone = quotation.clientPhone.replace(/\D/g, "");
 
   async function handleStatusChange(status: QuotationStatus) {
     setUpdatingStatus(true);
@@ -109,7 +108,7 @@ export function QuotationDetailPage({ quotation: initial }: { quotation: Quotati
         <QuotationStatusBadge status={quotation.status} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">Información de la solicitud</CardTitle>
@@ -146,7 +145,7 @@ export function QuotationDetailPage({ quotation: initial }: { quotation: Quotati
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <a
-                href={`https://wa.me/${whatsappPhone}`}
+                href={`https://wa.me/${quotation.clientPhone.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
@@ -164,111 +163,100 @@ export function QuotationDetailPage({ quotation: initial }: { quotation: Quotati
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <ContentCard noPadding>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Producto</TableHead>
-              <TableHead>Personalización</TableHead>
-              <TableHead>Bordado</TableHead>
-              <TableHead>Talla</TableHead>
-              <TableHead className="text-right">Cant.</TableHead>
-              <TableHead className="text-right">Estimado</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {quotation.items.length === 0 ? (
+        <ContentCard noPadding>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Sin productos en esta cotización.
-                </TableCell>
+                <TableHead>Producto</TableHead>
+                <TableHead>Personalización</TableHead>
+                <TableHead>Bordado</TableHead>
+                <TableHead>Talla</TableHead>
+                <TableHead className="text-right">Cant.</TableHead>
+                <TableHead className="text-right">Estimado</TableHead>
               </TableRow>
-            ) : (
-              quotation.items.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <div className="flex items-center gap-3 min-w-[180px]">
-                      <div className="relative h-12 w-12 shrink-0 rounded-md bg-secondary overflow-hidden flex items-center justify-center">
-                        {item.productImage ? (
-                          <Image src={item.productImage} alt={item.productName} fill sizes="48px" className="object-cover" />
-                        ) : (
-                          <ImageOff className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{item.productName}</p>
-                        {item.modelo && <p className="text-xs text-muted-foreground">Modelo: {item.modelo}</p>}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1.5 min-w-[140px]">
-                      {item.tela && <Chip>{item.tela}</Chip>}
-                      {item.color && <Chip>{item.color}</Chip>}
-                      {item.estampado && <Chip>{item.estampado}</Chip>}
-                      {!item.tela && !item.color && !item.estampado && (
-                        <span className="text-xs text-muted-foreground">Estándar</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {item.bordado || item.embroideryText ? (
-                      <div className="max-w-[220px]">
-                        {item.bordado && <p className="text-xs text-foreground">Diseño: {item.bordado}</p>}
-                        {item.embroideryText && (
-                          <p className="text-xs text-muted-foreground italic truncate" title={item.embroideryText}>
-                            Texto: &ldquo;{item.embroideryText}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Sin bordado</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-foreground">{item.size}</TableCell>
-                  <TableCell className="text-right text-foreground">{item.quantity}</TableCell>
-                  <TableCell className="text-right">
-                    <p className="text-sm text-foreground">{money.format(itemSubtotal(item))}</p>
-                    {item.estimatedUnitPrice > 0 && (
-                      <p className="text-xs text-muted-foreground">{money.format(item.estimatedUnitPrice)} / unidad</p>
-                    )}
+            </TableHeader>
+            <TableBody>
+              {quotation.items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    Sin productos en esta cotización.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        {total > 0 && (
-          <div className="flex items-center justify-end gap-3 border-t border-border px-5 py-4">
-            <span className="text-sm text-muted-foreground">Total estimado</span>
-            <span className="font-heading text-xl text-foreground">{money.format(total)}</span>
-          </div>
-        )}
-      </ContentCard>
+              ) : (
+                quotation.items.map((item, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <div className="flex items-center gap-3 min-w-[180px]">
+                        <div className="relative h-12 w-12 shrink-0 rounded-md bg-secondary overflow-hidden flex items-center justify-center">
+                          {item.productImage ? (
+                            <Image src={item.productImage} alt={item.productName} fill sizes="48px" className="object-cover" />
+                          ) : (
+                            <ImageOff className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{item.productName}</p>
+                          {item.modelo && <p className="text-xs text-muted-foreground">Modelo: {item.modelo}</p>}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 min-w-[140px]">
+                        {item.tela && <Chip>{item.tela}</Chip>}
+                        {item.color && <Chip>{item.color}</Chip>}
+                        {item.estampado && <Chip>{item.estampado}</Chip>}
+                        {!item.tela && !item.color && !item.estampado && (
+                          <span className="text-xs text-muted-foreground">Estándar</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-foreground">
+                      {item.bordado ? <Chip>{item.bordado}</Chip> : <span className="text-xs text-muted-foreground">No</span>}
+                    </TableCell>
+                    <TableCell className="text-foreground">{item.size}</TableCell>
+                    <TableCell className="text-right text-foreground">{item.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      <p className="text-sm text-foreground">{money.format(itemSubtotal(item))}</p>
+                      {item.estimatedUnitPrice > 0 && (
+                        <p className="text-xs text-muted-foreground">{money.format(item.estimatedUnitPrice)} / unidad</p>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+          {total > 0 && (
+            <div className="flex flex-col border-t border-border px-5 py-4">
+              <span className="text-sm text-muted-foreground">Total estimado</span>
+              <span className="font-heading text-xl text-foreground">{money.format(total)}</span>
+            </div>
+          )}
+        </ContentCard>
 
-      {quotation.referenceImages.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Imágenes de referencia del cliente</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-            {quotation.referenceImages.map((img, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={img}
-                alt={`Referencia ${i + 1}`}
-                className="aspect-square w-full rounded-md object-cover border border-border"
-              />
-            ))}
-          </CardContent>
-        </Card>
-      )}
+        {quotation.referenceImages.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Imágenes de referencia del cliente</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-3">
+              {quotation.referenceImages.map((img, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={img}
+                  alt={`Referencia ${i + 1}`}
+                  className="aspect-square w-full rounded-md object-cover border border-border"
+                />
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <Card>
-        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CardContent className="pt-6 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">Estado de la solicitud</span>
             <QuotationStatusSelect value={quotation.status} onChange={handleStatusChange} />

@@ -58,7 +58,7 @@ export function SettingsShell() {
 
   if (!settings) return <Skeleton className="h-96 w-full rounded-lg" />;
 
-  return (
+return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Configuración" subtitle="Ajustes generales del sitio" />
 

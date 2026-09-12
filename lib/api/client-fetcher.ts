@@ -29,7 +29,9 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
 async function fetchApi<T>(path: string, options: FetchOptions, method: FetchOptions["method"]): Promise<T> {
   const isFormData = options.body instanceof FormData;
 
-  const response = await fetch(`/api/proxy/${path}`, {
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+
+  const response = await fetch(`/api/proxy/${cleanPath}`, {
     method,
     headers: isFormData ? undefined : { "content-type": "application/json" },
     body: isFormData ? (options.body as FormData) : options.body ? JSON.stringify(options.body) : undefined,

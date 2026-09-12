@@ -34,76 +34,81 @@ function initials(name: string) {
 
 export function UserTable({ users, currentUserEmail, onRoleChange, onEdit, onRemove }: UserTableProps) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Usuario</TableHead>
-          <TableHead>Rol</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead>Último acceso</TableHead>
-          <TableHead className="text-right">Acciones</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {users.map((user) => {
-         const isSelf = user.email.toLowerCase() === currentUserEmail.toLowerCase();
-          return (
-            <TableRow key={user.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-accent text-accent-foreground text-xs">
-                      {initials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Usuario</TableHead>
+            <TableHead>Rol</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead>Último acceso</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => {
+            const isSelf = user.email.toLowerCase() === currentUserEmail.toLowerCase();
+            return (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                        {initials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                {isSelf ? (
-                  <span className="text-sm text-muted-foreground">{user.role} (tú)</span>
-                ) : (
-                  <Select value={user.role} onValueChange={(v) => onRoleChange(user.id, v as UserRole)}>
-                    <SelectTrigger className="w-36 h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USER_ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </TableCell>
-              <TableCell>
-                <UserStatusBadge status={user.status} />
-              </TableCell>
-              <TableCell className="text-muted-foreground">{user.lastAccess}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Editar" onClick={() => onEdit(user)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  {!isSelf && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 hover:text-destructive"
-                      onClick={() => onRemove(user)}
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-4 w-4" />
+                </TableCell>
+                <TableCell>
+                  {isSelf ? (
+                    <span className="text-sm text-muted-foreground">{user.role} (tú)</span>
+                  ) : (
+                    <Select value={user.role} onValueChange={(v) => onRoleChange(user.id, v as UserRole)}>
+                      <SelectTrigger className="w-full sm:w-36 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {USER_ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                  }
+                </TableCell>
+                <TableCell>
+                  <UserStatusBadge status={user.status} />
+                </TableCell>
+                <TableCell>
+                  <p className="text-muted-foreground">{user.lastAccess}</p>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Editar" onClick={() => onEdit(user)}>
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                  )}
+                    {!isSelf && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 hover:text-destructive"
+                        onClick={() => onRemove(user)}
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+</Button>
+                )}
                 </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
