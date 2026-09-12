@@ -78,6 +78,8 @@ const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "PUT", pattern: /^Settings$/ },
   { method: "GET", pattern: /^admin\/page-headers$/ },
   { method: "PUT", pattern: /^admin\/page-headers\/[a-z]+$/ },
+  { method: "GET", pattern: /^public\/invitations\/[A-Za-z0-9_-]+$/ },
+  { method: "POST", pattern: /^public\/invitations\/accept$/ },
 
 ];
 export function isRouteAllowed(method: string, path: string): boolean {
