@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { SizesColorsEditor } from "./sizes-colors-editor";
 import type { ProductVariant, ProductColor } from "../types";
+import { generateUniqueSku } from "../utils/sku-generator";
 
 interface ProductVariantsSubmoduleProps {
   sizes: string[];
@@ -34,6 +35,7 @@ interface ProductVariantsSubmoduleProps {
   onAddColor: (color: ProductColor) => void;
   onRemoveColor: (name: string) => void;
   onUpdateVariant: (id: string, patch: Partial<ProductVariant>) => void;
+  onRegenerateAllSkus?: () => void;
 }
 
 export function ProductVariantsSubmodule({
@@ -46,6 +48,7 @@ export function ProductVariantsSubmodule({
   onAddColor,
   onRemoveColor,
   onUpdateVariant,
+  onRegenerateAllSkus,
 }: ProductVariantsSubmoduleProps) {
   const [colorFilter, setColorFilter] = useState("todos");
   const [sizeFilter, setSizeFilter] = useState("todos");
@@ -116,6 +119,19 @@ export function ProductVariantsSubmodule({
                 Total combinaciones: {variants.length}
               </CardDescription>
             </div>
+            {onRegenerateAllSkus && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRegenerateAllSkus}
+                title="Autogenerar SKUs únicos para todas las variantes"
+                className="border-[#EBE9DF] text-[#555829] hover:bg-[#FAF9F5] text-xs h-8 px-2.5 gap-1.5 font-medium"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-[#555829]" />
+                Autogenerar SKUs
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             {/* Filtros */}
@@ -211,12 +227,27 @@ export function ProductVariantsSubmodule({
 
                           {/* SKU */}
                           <TableCell className="py-2 text-xs text-muted-foreground font-mono">
-                            <Input
-                              value={v.sku}
-                              onChange={(e) => onUpdateVariant(v.id, { sku: e.target.value })}
-                              className="h-7 text-xs bg-white border-[#EBE9DF]"
-                              onClick={(e) => e.stopPropagation()}
-                            />
+                            <div className="flex items-center gap-1">
+                              <Input
+                                value={v.sku}
+                                onChange={(e) => onUpdateVariant(v.id, { sku: e.target.value })}
+                                className="h-7 text-xs bg-white border-[#EBE9DF]"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                title="Autogenerar SKU único"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateVariant(v.id, { sku: generateUniqueSku(v.size, v.colorName) });
+                                }}
+                                className="h-7 w-7 text-[#555829] hover:bg-[#FAF9F5] shrink-0"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </TableCell>
 
                           {/* Stock */}

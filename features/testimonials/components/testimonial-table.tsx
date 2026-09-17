@@ -156,7 +156,7 @@ export function TestimonialTable() {
         </div>
         <Button
           onClick={handleCreateNew}
-          className="bg-[#555829] hover:bg-[#444620] text-white font-medium rounded-md shadow-xs self-start sm:self-auto gap-2"
+          className="bg-[#4a5833] hover:bg-[#3d492a] text-white font-medium rounded-md shadow-xs self-start sm:self-auto gap-2"
         >
           <Plus className="h-4 w-4" />
           Nuevo testimonio
@@ -176,7 +176,7 @@ export function TestimonialTable() {
                 setPage(1);
               }}
               placeholder="Buscar testimonios..."
-              className="pl-9 bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+              className="pl-9 bg-white border-[#EBE9DF] focus-visible:ring-[#4a5833]"
             />
           </div>
 
@@ -188,7 +188,7 @@ export function TestimonialTable() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[180px] bg-white border-[#EBE9DF] focus:ring-[#555829]">
+            <SelectTrigger className="w-[180px] bg-white border-[#EBE9DF] focus:ring-[#4a5833]">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -218,7 +218,7 @@ export function TestimonialTable() {
               <TableRow>
                 <TableCell colSpan={6} className="h-40 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#555829]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-[#4a5833]" />
                     <span className="text-sm">Cargando testimonios...</span>
                   </div>
                 </TableCell>
@@ -278,7 +278,7 @@ export function TestimonialTable() {
                   {/* Estado */}
                   <TableCell>
                     {t.status === "publicado" ? (
-                      <Badge className="bg-[#555829] text-white hover:bg-[#444620] border-0 font-medium px-2.5 py-0.5 rounded-md">
+                      <Badge className="bg-[#4a5833] text-white hover:bg-[#3d492a] border-0 font-medium px-2.5 py-0.5 rounded-md">
                         Publicado
                       </Badge>
                     ) : (
@@ -344,7 +344,7 @@ export function TestimonialTable() {
                   onClick={() => setPage(pageNum)}
                   className={`h-8 w-8 p-0 text-xs font-medium rounded-md ${
                     pageNum === data.pageNumber
-                      ? "bg-[#555829] text-white hover:bg-[#444620]"
+                      ? "bg-[#4a5833] text-white hover:bg-[#3d492a]"
                       : "bg-white border-[#EBE9DF] text-[#34351f] hover:bg-[#F2F2EC]"
                   }`}
                 >

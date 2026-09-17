@@ -25,7 +25,7 @@ export const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "POST", pattern: /^Categories\/.*$/ },
   { method: "PUT", pattern: /^Categories\/.*$/ },
   { method: "DELETE", pattern: /^Categories\/.*$/ },
-  { method: "POST", pattern: /^Media\/upload$/ },
+  { method: "POST", pattern: /^Media\/upload(\?.*)?$/ },
   { method: "GET", pattern: /^Collections(\?.*)?$/ },
   { method: "GET", pattern: /^Collections\/.*$/ },
   { method: "POST", pattern: /^Collections(\?.*)?$/ },

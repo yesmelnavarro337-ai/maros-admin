@@ -259,7 +259,7 @@ export function ProfileView() {
     return (
       <div className="max-w-xl mx-auto p-12 text-center">
         <p className="text-muted-foreground font-medium">No se pudo cargar la información de tu perfil.</p>
-        <Button onClick={fetchAllData} className="mt-4 bg-[#6B5E41] hover:bg-[#584D35] text-white">
+        <Button onClick={fetchAllData} className="mt-4 bg-[#4a5833] hover:bg-[#3d492a] text-white">
           Reintentar
         </Button>
       </div>
@@ -325,7 +325,7 @@ export function ProfileView() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
-              className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#6B5E41] text-white flex items-center justify-center shadow-md hover:bg-[#574C33] transition-colors cursor-pointer disabled:opacity-50"
+              className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#4a5833] text-white flex items-center justify-center shadow-md hover:bg-[#3d492a] transition-colors cursor-pointer disabled:opacity-50"
               title="Cambiar imagen de perfil"
             >
               {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
@@ -358,7 +358,7 @@ export function ProfileView() {
         {/* Right 1 Col: Decorative Quote Banner */}
         <div className="bg-[#F7F5F0] border border-[#E9E4D7] rounded-2xl p-6 relative flex flex-col justify-center overflow-hidden">
           <div className="space-y-3 z-10 max-w-xs">
-            <p className="font-heading italic text-xl md:text-2xl text-[#6B5E41] leading-relaxed">
+            <p className="font-heading italic text-xl md:text-2xl text-[#4a5833] leading-relaxed">
               "Juntos hacemos que cada pijama cuente una historia"
             </p>
             <p className="text-xl text-[#756A49]">♡</p>
@@ -407,7 +407,7 @@ export function ProfileView() {
                   setNameInput(profile.name);
                   setEditNameOpen(true);
                 }}
-                className="border-[#E5DFD1] text-[#6B5E41] hover:bg-[#F6F4EE] rounded-full text-xs font-medium px-4"
+                className="border-[#E5DFD1] text-[#4a5833] hover:bg-[#F6F4EE] rounded-full text-xs font-medium px-4"
               >
                 Editar
               </Button>
@@ -431,7 +431,7 @@ export function ProfileView() {
                   setNewEmailInput("");
                   setEmailDialogOpen(true);
                 }}
-                className="border-[#E5DFD1] text-[#6B5E41] hover:bg-[#F6F4EE] rounded-full text-xs font-medium px-4"
+                className="border-[#E5DFD1] text-[#4a5833] hover:bg-[#F6F4EE] rounded-full text-xs font-medium px-4"
               >
                 Editar
               </Button>
@@ -457,7 +457,7 @@ export function ProfileView() {
                   setPhoneInput(profile.phone || "+57 300 123 4567");
                   setEditPhoneOpen(true);
                 }}
-                className="border-[#E5DFD1] text-[#6B5E41] hover:bg-[#F6F4EE] rounded-full text-xs font-medium px-4"
+                className="border-[#E5DFD1] text-[#4a5833] hover:bg-[#F6F4EE] rounded-full text-xs font-medium px-4"
               >
                 Editar
               </Button>
@@ -538,7 +538,7 @@ export function ProfileView() {
                 <Button
                   type="submit"
                   disabled={changingPass}
-                  className="w-full h-11 rounded-xl bg-[#6B5E41] hover:bg-[#574C33] text-white font-medium shadow-xs transition-colors flex items-center justify-center gap-2 mt-2"
+                  className="w-full h-11 rounded-xl bg-[#4a5833] hover:bg-[#3d492a] text-white font-medium shadow-xs transition-colors flex items-center justify-center gap-2 mt-2"
                 >
                   {changingPass ? (
                     <>
@@ -583,7 +583,7 @@ export function ProfileView() {
                 checked={emailNotifs}
                 disabled={updatingPrefs}
                 onCheckedChange={(checked) => handleTogglePreference("email", checked)}
-                className="data-[state=checked]:bg-[#6B5E41]"
+                className="data-[state=checked]:bg-[#4a5833]"
               />
             </div>
 
@@ -602,7 +602,7 @@ export function ProfileView() {
                 checked={inAppNotifs}
                 disabled={updatingPrefs}
                 onCheckedChange={(checked) => handleTogglePreference("inApp", checked)}
-                className="data-[state=checked]:bg-[#6B5E41]"
+                className="data-[state=checked]:bg-[#4a5833]"
               />
             </div>
           </CardContent>
@@ -674,7 +674,7 @@ export function ProfileView() {
               <Button type="button" variant="ghost" onClick={() => setEditNameOpen(false)} disabled={savingBasic}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={savingBasic} className="bg-[#6B5E41] hover:bg-[#574C33] text-white">
+              <Button type="submit" disabled={savingBasic} className="bg-[#4a5833] hover:bg-[#3d492a] text-white">
                 {savingBasic ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                 Guardar
               </Button>
@@ -705,7 +705,7 @@ export function ProfileView() {
               <Button type="button" variant="ghost" onClick={() => setEditPhoneOpen(false)} disabled={savingBasic}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={savingBasic} className="bg-[#6B5E41] hover:bg-[#574C33] text-white">
+              <Button type="submit" disabled={savingBasic} className="bg-[#4a5833] hover:bg-[#3d492a] text-white">
                 {savingBasic ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                 Guardar
               </Button>
@@ -740,7 +740,7 @@ export function ProfileView() {
               <Button type="button" variant="ghost" onClick={() => setEmailDialogOpen(false)} disabled={requestingCode}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={requestingCode || !newEmailInput.trim()} className="bg-[#6B5E41] hover:bg-[#574C33] text-white">
+              <Button type="submit" disabled={requestingCode || !newEmailInput.trim()} className="bg-[#4a5833] hover:bg-[#3d492a] text-white">
                 {requestingCode ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
                 Enviar códigos
               </Button>

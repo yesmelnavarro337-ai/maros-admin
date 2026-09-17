@@ -73,7 +73,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                   isActive
-                    ? "bg-[#555829] text-white font-medium shadow-xs"
+                    ? "bg-[#4a5833] text-white font-medium shadow-xs"
                     : "text-foreground hover:bg-secondary",
                   collapsed && "justify-center px-0"
                 )}

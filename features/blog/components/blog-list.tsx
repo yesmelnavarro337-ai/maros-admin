@@ -178,7 +178,7 @@ export function BlogList() {
           <Button
             size="sm"
             onClick={handleNewArticle}
-            className="h-9 gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-medium shadow-sm text-xs"
+            className="h-9 gap-2 bg-[#4a5833] hover:bg-[#3d492a] text-white font-medium shadow-sm text-xs"
           >
             <Plus className="h-4 w-4" />
             + Nuevo artículo

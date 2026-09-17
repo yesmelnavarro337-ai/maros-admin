@@ -131,7 +131,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
             size="sm"
             onClick={handleSave}
             disabled={saving}
-            className="bg-[#2D4A3E] hover:bg-[#233a30] text-white font-medium"
+            className="bg-[#4a5833] hover:bg-[#3d492a] text-white font-medium"
           >
             {saving ? "Guardando..." : "Guardar cambios"}
           </Button>
@@ -182,7 +182,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-[#2D4A3E] hover:bg-[#233a30] text-white font-medium shadow-xs"
+              className="bg-[#4a5833] hover:bg-[#3d492a] text-white font-medium shadow-xs"
             >
               {saving ? "Guardando..." : "Guardar cambios"}
             </Button>

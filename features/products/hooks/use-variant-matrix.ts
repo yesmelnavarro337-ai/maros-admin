@@ -3,6 +3,8 @@
 import { useState, useCallback } from "react";
 import type { ProductColor, ProductVariant } from "../types";
 
+import { generateUniqueSku } from "../utils/sku-generator";
+
 function regenerateVariants(
   sizes: string[],
   colors: ProductColor[],
@@ -19,7 +21,7 @@ function regenerateVariants(
           size,
           colorName: color.name,
           colorHex: color.hex,
-          sku: `SKU-${size}-${color.name.slice(0, 3).toUpperCase()}`,
+          sku: generateUniqueSku(size, color.name),
           stock: 0,
           image: undefined,
         }
@@ -78,5 +80,33 @@ export function useVariantMatrix(
     []
   );
 
-  return { sizes, colors, variants, addSize, removeSize, addColor, removeColor, updateVariant };
+  const regenerateAllSkus = useCallback(() => {
+    setVariants((prev) =>
+      prev.map((v) => ({
+        ...v,
+        sku: generateUniqueSku(v.size, v.colorName),
+      }))
+    );
+  }, []);
+
+  const generateSkuForVariant = useCallback((id: string) => {
+    setVariants((prev) =>
+      prev.map((v) =>
+        v.id === id ? { ...v, sku: generateUniqueSku(v.size, v.colorName) } : v
+      )
+    );
+  }, []);
+
+  return {
+    sizes,
+    colors,
+    variants,
+    addSize,
+    removeSize,
+    addColor,
+    removeColor,
+    updateVariant,
+    regenerateAllSkus,
+    generateSkuForVariant,
+  };
 }

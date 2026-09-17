@@ -35,6 +35,7 @@ import { uploadImage } from "@/lib/api/media.service";
 import type { Category } from "@/features/categories/types";
 import type { Collection } from "@/features/collections/types";
 import type { ProductStatus } from "../types";
+import { generateUniqueSku } from "../utils/sku-generator";
 
 interface ProductInfoSubmoduleProps {
   name: string;
@@ -403,13 +404,25 @@ export function ProductInfoSubmodule({
                 <Label htmlFor="prod-sku" className="text-xs font-semibold text-[#34351f]">
                   SKU (Código Interno)
                 </Label>
-                <Input
-                  id="prod-sku"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  placeholder="MP-SAT-BEIGE-01"
-                  className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="prod-sku"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    placeholder="MP-BASE-PROD-1024"
+                    className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSku(generateUniqueSku("BASE", name ? name.slice(0, 3) : "PROD"))}
+                    title="Autogenerar SKU único"
+                    className="border-[#EBE9DF] text-[#555829] hover:bg-[#FAF9F5] text-xs h-9 px-3 shrink-0 gap-1.5 font-medium"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Autogenerar SKU</span>
+                  </Button>
+                </div>
               </div>
             </div>
 

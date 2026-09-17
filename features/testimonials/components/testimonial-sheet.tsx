@@ -180,7 +180,7 @@ export function TestimonialSheet({
               onChange={(e) => setClientName(e.target.value)}
               placeholder="Ej. María Fernanda Gómez"
               required
-              className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+              className="bg-white border-[#EBE9DF] focus-visible:ring-[#4a5833]"
             />
           </div>
 
@@ -194,7 +194,7 @@ export function TestimonialSheet({
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="Ej. Medellín, Colombia"
-              className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+              className="bg-white border-[#EBE9DF] focus-visible:ring-[#4a5833]"
             />
           </div>
 
@@ -226,7 +226,7 @@ export function TestimonialSheet({
               maxLength={500}
               rows={4}
               required
-              className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829] resize-none"
+              className="bg-white border-[#EBE9DF] focus-visible:ring-[#4a5833] resize-none"
             />
           </div>
 
@@ -264,12 +264,12 @@ export function TestimonialSheet({
               >
                 {uploading ? (
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#555829]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-[#4a5833]" />
                     <span className="text-xs">Subiendo imagen...</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-1 text-center">
-                    <div className="p-2 rounded-full bg-[#EBE9DF] text-[#555829] mb-1">
+                    <div className="p-2 rounded-full bg-[#EBE9DF] text-[#4a5833] mb-1">
                       <Upload className="h-5 w-5" />
                     </div>
                     <span className="text-xs font-medium text-[#34351f]">
@@ -298,7 +298,7 @@ export function TestimonialSheet({
               Estado <span className="text-red-500">*</span>
             </Label>
             <Select value={status} onValueChange={(val: TestimonialStatus) => setStatus(val)}>
-              <SelectTrigger id="status" className="bg-white border-[#EBE9DF] focus:ring-[#555829]">
+              <SelectTrigger id="status" className="bg-white border-[#EBE9DF] focus:ring-[#4a5833]">
                 <SelectValue placeholder="Selecciona estado" />
               </SelectTrigger>
               <SelectContent>
@@ -319,7 +319,7 @@ export function TestimonialSheet({
               value={publishDate}
               onChange={(e) => setPublishDate(e.target.value)}
               required
-              className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+              className="bg-white border-[#EBE9DF] focus-visible:ring-[#4a5833]"
             />
           </div>
         </form>
@@ -339,7 +339,7 @@ export function TestimonialSheet({
             type="submit"
             form="testimonial-form"
             disabled={submitting || uploading}
-            className="bg-[#555829] hover:bg-[#444620] text-white font-medium shadow-xs"
+            className="bg-[#4a5833] hover:bg-[#3d492a] text-white font-medium shadow-xs"
           >
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? "Guardar cambios" : "Guardar testimonio"}

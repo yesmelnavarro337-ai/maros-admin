@@ -18,6 +18,8 @@ import { ProductVariantsSubmodule } from "./product-variants-submodule";
 import { ProductCollectionSubmodule } from "./product-collection-submodule";
 import { ProductConfigSubmodule } from "./product-config-submodule";
 import { ProductSeoSubmodule } from "./product-seo-submodule";
+import { ApiError } from "@/lib/api/errors";
+import { generateUniqueSku } from "../utils/sku-generator";
 import {
   DELIVERY_TIME_OPTIONS,
   SHIPPING_METHOD_OPTIONS,
@@ -92,6 +94,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     addColor,
     removeColor,
     updateVariant,
+    regenerateAllSkus,
   } = useVariantMatrix(
     initialData?.sizes ?? ["S", "M", "L"],
     initialData?.colors ?? [
@@ -164,7 +167,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
           size: v.size,
           colorName: v.colorName,
           colorHex: v.colorHex,
-          sku: v.sku || `${sku}-${v.size}-${v.colorName.slice(0, 3).toUpperCase()}`,
+          sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName),
           stock: v.stock,
           image: v.image,
         })),
@@ -181,7 +184,13 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
 
       router.push("/admin/productos");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al guardar el producto.");
+      if (err instanceof ApiError && err.status === 409) {
+        toast.error(err.message || "El SKU ingresado ya está en uso. Por favor modifica o autogenera un SKU distinto.", {
+          duration: 6000,
+        });
+      } else {
+        toast.error(err instanceof Error ? err.message : "Error al guardar el producto.");
+      }
     } finally {
       setSaving(false);
     }
@@ -341,6 +350,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             onAddColor={addColor}
             onRemoveColor={removeColor}
             onUpdateVariant={updateVariant}
+            onRegenerateAllSkus={regenerateAllSkus}
           />
         </TabsContent>
 
