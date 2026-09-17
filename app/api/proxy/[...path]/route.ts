@@ -6,7 +6,7 @@ import { isRouteAllowed } from "@/lib/api/allowlist";
 async function handler(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   
-  // 1. MANTENER las mayúsculas/minúsculas originales del endpoint
+  // 1. Mantener las mayúsculas/minúsculas originales del endpoint
   const joinedPath = path.join("/");
   const method = request.method;
 
@@ -26,24 +26,50 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
   backendUrl.search = request.nextUrl.search;
 
   const headers = new Headers();
-  const contentType = request.headers.get("content-type");
-  if (contentType) headers.set("content-type", contentType);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const hasBody = method !== "GET" && method !== "HEAD";
+  const contentType = request.headers.get("content-type") || "";
+  const isMultipart = contentType.includes("multipart/form-data");
+
+  let body: BodyInit | undefined = undefined;
+
+  if (hasBody) {
+    if (isMultipart) {
+      // Re-crear FormData para que fetch() genere automáticamente el boundary correcto.
+      // IMPORTANTE: NO definir 'content-type' manualmente en headers para peticiones multipart.
+      const incomingFormData = await request.formData();
+      const outgoingFormData = new FormData();
+      incomingFormData.forEach((value, key) => {
+        outgoingFormData.append(key, value);
+      });
+      body = outgoingFormData;
+    } else {
+      if (contentType) headers.set("content-type", contentType);
+      body = request.body ?? undefined;
+    }
+  }
 
   try {
     const backendResponse = await fetch(backendUrl, {
       method,
       headers,
-      body: hasBody ? request.body : undefined,
+      body,
       // @ts-expect-error - "duplex" es requerido por fetch de Node para bodies en streaming
-      duplex: hasBody ? "half" : undefined,
+      duplex: hasBody && !isMultipart ? "half" : undefined,
       cache: "no-store",
     });
 
-    // 4. Leer la respuesta UNA SOLA VEZ
     const responseData = await backendResponse.arrayBuffer();
+
+    // Log de diagnóstico en Vercel para respuestas de error de la API (status >= 400)
+    if (!backendResponse.ok) {
+      const errorText = new TextDecoder().decode(responseData);
+      console.error(
+        `[Proxy Error] ${method} /api/${joinedPath} responded with HTTP ${backendResponse.status}:`,
+        errorText
+      );
+    }
 
     const responseHeaders = new Headers();
     const responseContentType = backendResponse.headers.get("content-type");
@@ -55,6 +81,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+    console.error(`[Proxy Exception] Failed to reach backend /api/${joinedPath}:`, errorMessage);
     return NextResponse.json(
       { status: 503, message: "Error de comunicación con el backend", detail: errorMessage },
       { status: 503 }
