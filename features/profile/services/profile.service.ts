@@ -87,3 +87,12 @@ export async function verifyEmailChange(
     body: payload,
   });
 }
+
+export async function uploadAvatar(file: File): Promise<UserProfile> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiFetch<UserProfile>("Profile/avatar", {
+    method: "POST",
+    body: formData,
+  });
+}

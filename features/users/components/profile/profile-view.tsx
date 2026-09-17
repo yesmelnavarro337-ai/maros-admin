@@ -40,6 +40,7 @@ import {
   updatePreferences,
   getActivityLogs,
   requestEmailChange,
+  uploadAvatar,
   type UserProfile,
   type UserActivityLog,
 } from "@/features/profile/services/profile.service";
@@ -221,26 +222,23 @@ export function ProfileView() {
     }
   };
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Simulate avatar upload / conversion to data URL
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const avatarUrl = reader.result as string;
-      try {
-        const updated = await updateProfileBasic({
-          name: profile?.name || "",
-          avatarUrl,
-        });
-        setProfile(updated);
-        toast.success("Imagen de perfil actualizada correctamente.");
-      } catch (err: any) {
-        toast.error("No se pudo actualizar la imagen de perfil.");
-      }
-    };
-    reader.readAsDataURL(file);
+    setUploadingAvatar(true);
+    try {
+      const updated = await uploadAvatar(file);
+      setProfile(updated);
+      toast.success("Imagen de perfil subida a Cloudinary correctamente.");
+    } catch (err: any) {
+      toast.error(err?.message || "No se pudo subir la imagen de perfil.");
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   if (loading) {
@@ -326,10 +324,11 @@ export function ProfileView() {
             </Avatar>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#6B5E41] text-white flex items-center justify-center shadow-md hover:bg-[#574C33] transition-colors cursor-pointer"
+              disabled={uploadingAvatar}
+              className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#6B5E41] text-white flex items-center justify-center shadow-md hover:bg-[#574C33] transition-colors cursor-pointer disabled:opacity-50"
               title="Cambiar imagen de perfil"
             >
-              <Camera className="h-4 w-4" />
+              {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             </button>
           </div>
 
