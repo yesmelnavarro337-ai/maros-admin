@@ -8,13 +8,13 @@ interface ProductSearchProps {
 
 export function ProductSearch({ value, onChange }: ProductSearchProps) {
   return (
-    <div className="relative w-full max-w-xs">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="relative w-full max-w-sm sm:w-72">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
       <Input
-        placeholder="Buscar producto..."
+        placeholder="Buscar por nombre, SKU o referencia..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-9"
+        className="pl-9 h-9 text-xs bg-card border-border/80 rounded-lg placeholder:text-muted-foreground/70"
       />
     </div>
   );

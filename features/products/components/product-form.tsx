@@ -1,73 +1,31 @@
 "use client";
 
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { toast } from "@/lib/toast";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-
-import {
-  productSchema,
-  type ProductFormInput,
-  type ProductFormValues,
-} from "../schemas/product.schema";
-
-import { useVariantMatrix } from "../hooks/use-variant-matrix";
-
-import {
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "../services/products.service";
-
-import { ImageUploader } from "./image-uploader";
-import { SizesColorsEditor } from "./sizes-colors-editor";
-import { VariantMatrix } from "./variant-matrix";
-import { SeoFields } from "./seo-fields";
-
-import type { Product } from "../types";
-import { SeoEditor } from "@/components/shared/seo-editor";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { DELIVERY_TIME_OPTIONS } from "../types";
-
-import type { SeoData } from "@/types/seo";
-import type { Collection } from "@/features/collections/types";
-import { getCollections } from "@/features/collections/services/collections.service";
-
-import { Label } from "@/components/ui/label";
-import { useCategories } from "@/features/categories/hooks/use-categories";
-
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Trash2, Save, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { useCategories } from "@/features/categories/hooks/use-categories";
+import { getCollections } from "@/features/collections/services/collections.service";
+import type { Collection } from "@/features/collections/types";
+import { useVariantMatrix } from "../hooks/use-variant-matrix";
+import { createProduct, updateProduct, deleteProduct } from "../services/products.service";
+import { ProductInfoSubmodule } from "./product-info-submodule";
+import { ProductVariantsSubmodule } from "./product-variants-submodule";
+import { ProductCollectionSubmodule } from "./product-collection-submodule";
+import { ProductConfigSubmodule } from "./product-config-submodule";
+import { ProductSeoSubmodule } from "./product-seo-submodule";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-
-import { Trash2 } from "lucide-react";
+  DELIVERY_TIME_OPTIONS,
+  SHIPPING_METHOD_OPTIONS,
+  WARRANTY_OPTIONS,
+  type Product,
+  type ProductStatus,
+  type ProductVisibility,
+} from "../types";
 
 interface ProductFormProps {
   mode: "create" | "edit";
@@ -77,75 +35,54 @@ interface ProductFormProps {
 export function ProductForm({ mode, initialData }: ProductFormProps) {
   const router = useRouter();
 
-  const [images, setImages] = useState<string[]>(
-    initialData?.images ?? []
-  );
-
+  // Categories & Collections
   const { categories, loading: loadingCategories } = useCategories();
-
-  // Colecciones reales provenientes del backend
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loadingCollections, setLoadingCollections] = useState(true);
 
-  const [collectionIds, setCollectionIds] = useState<string[]>(
-    initialData?.collectionIds ?? []
+  // Form State
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [categoryId, setCategoryId] = useState(initialData?.categoryId ?? "");
+  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [basePrice, setBasePrice] = useState(initialData?.basePrice ?? 0);
+  const [status, setStatus] = useState<ProductStatus>(initialData?.status ?? "borrador");
+  const [totalStock, setTotalStock] = useState(initialData?.totalStock ?? 10);
+  const [weightKg, setWeightKg] = useState<number | undefined>(initialData?.weightKg ?? 0.35);
+
+  const [brand, setBrand] = useState(initialData?.brand ?? "Maro's Pijamas");
+  const [sku, setSku] = useState(initialData?.sku ?? "");
+  const [isOffer, setIsOffer] = useState(initialData?.isOffer ?? false);
+  const [freeShipping, setFreeShipping] = useState(initialData?.freeShipping ?? false);
+
+  const [images, setImages] = useState<string[]>(initialData?.images ?? []);
+  const [collectionIds, setCollectionIds] = useState<string[]>(initialData?.collectionIds ?? []);
+  const [tags, setTags] = useState<string[]>(initialData?.tags ?? ["satín", "pijama", "mujer"]);
+
+  // Config State
+  const [featuredHome, setFeaturedHome] = useState(initialData?.featuredHome ?? false);
+  const [allowCustomization, setAllowCustomization] = useState(initialData?.allowCustomization ?? true);
+  const [visibility, setVisibility] = useState<ProductVisibility>(initialData?.visibility ?? "publico");
+  const [trackInventory, setTrackInventory] = useState(initialData?.trackInventory ?? true);
+  const [deliveryTime, setDeliveryTime] = useState<string>(
+    initialData?.deliveryTime ?? DELIVERY_TIME_OPTIONS[0]
+  );
+  const [shippingMethod, setShippingMethod] = useState<string>(
+    initialData?.shippingMethod ?? SHIPPING_METHOD_OPTIONS[0]
+  );
+  const [warrantyPeriod, setWarrantyPeriod] = useState<string>(
+    initialData?.warrantyPeriod ?? WARRANTY_OPTIONS[0]
   );
 
-  const [featuredHome, setFeaturedHome] = useState(
-    initialData?.featuredHome ?? false
+  // SEO State
+  const [seoTitle, setSeoTitle] = useState(initialData?.seo?.title ?? "");
+  const [seoSlug, setSeoSlug] = useState(initialData?.seo?.slug ?? "");
+  const [seoDescription, setSeoDescription] = useState(initialData?.seo?.description ?? "");
+  const [keywords, setKeywords] = useState("pijama satin, pijamas de mujer, maros pijamas");
+  const [seoSocialImageUrl, setSeoSocialImageUrl] = useState<string | undefined>(
+    initialData?.seo?.socialImage
   );
 
-  const [allowCustomization, setAllowCustomization] = useState(
-    initialData?.allowCustomization ?? true
-  );
-
-  const [deliveryTime, setDeliveryTime] = useState(
-    initialData?.deliveryTime ?? DELIVERY_TIME_OPTIONS[1]
-  );
-
-  const [seo, setSeo] = useState<SeoData>(
-    initialData?.seo ?? {
-      title: "",
-      description: "",
-      slug: "",
-    }
-  );
-
-  /**
-   * Carga las colecciones reales desde el backend.
-   *
-   * Ya no usamos mockCollections.
-   */
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadCollections() {
-      try {
-        setLoadingCollections(true);
-
-        const data = await getCollections();
-
-        if (mounted) {
-          setCollections(data);
-        }
-      } catch {
-        if (mounted) {
-          toast.error("No se pudieron cargar las colecciones");
-        }
-      } finally {
-        if (mounted) {
-          setLoadingCollections(false);
-        }
-      }
-    }
-
-    loadCollections();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+  // Variant Matrix
   const {
     sizes,
     colors,
@@ -156,415 +93,330 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     removeColor,
     updateVariant,
   } = useVariantMatrix(
-    initialData?.sizes ?? [],
-    initialData?.colors ?? [],
+    initialData?.sizes ?? ["S", "M", "L"],
+    initialData?.colors ?? [
+      { name: "Beige Satín", hex: "#E8D8C8" },
+      { name: "Verde Oliva", hex: "#555829" },
+    ],
     initialData?.variants ?? []
   );
 
-  const form = useForm<ProductFormInput, unknown, ProductFormValues>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: initialData?.name ?? "",
-      categoryId: initialData?.categoryId ?? "",
-      description: initialData?.description ?? "",
-      basePrice: initialData?.basePrice ?? 0,
-      status: initialData?.status ?? "borrador",
-    },
-  });
-
+  // Dialogs & Submitting state
+  const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  async function onSubmit(values: ProductFormValues) {
-    const payload = {
-      ...values,
-      images,
-      variants,
-      collectionIds,
-      featuredHome,
-      allowCustomization,
-      deliveryTime,
-      seo,
+  useEffect(() => {
+    let mounted = true;
+    async function loadCollections() {
+      try {
+        setLoadingCollections(true);
+        const data = await getCollections();
+        if (mounted) setCollections(data);
+      } catch {
+        if (mounted) toast.error("No se pudieron cargar las colecciones.");
+      } finally {
+        if (mounted) setLoadingCollections(false);
+      }
+    }
+    loadCollections();
+    return () => {
+      mounted = false;
     };
+  }, []);
 
-    if (mode === "create") {
-      const created = await createProduct(payload);
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      toast.success("Producto creado correctamente");
+    if (!name.trim()) {
+      toast.error("El nombre del producto es requerido.");
+      return;
+    }
 
-      router.push(`/admin/productos/${created.id}`);
-    } else if (initialData) {
-      await updateProduct(initialData.id, payload);
+    if (!categoryId) {
+      toast.error("Por favor selecciona una categoría.");
+      return;
+    }
 
-      toast.success("Producto actualizado correctamente");
+    if (basePrice <= 0) {
+      toast.error("El precio base debe ser mayor a 0 COP.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        categoryId,
+        description: description.trim(),
+        basePrice,
+        status,
+        featuredHome,
+        allowCustomization,
+        deliveryTime,
+        seo: {
+          title: seoTitle.trim() || name.trim(),
+          description: seoDescription.trim() || description.trim(),
+          slug: seoSlug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          socialImage: seoSocialImageUrl,
+        },
+        images,
+        variants: variants.map((v) => ({
+          size: v.size,
+          colorName: v.colorName,
+          colorHex: v.colorHex,
+          sku: v.sku || `${sku}-${v.size}-${v.colorName.slice(0, 3).toUpperCase()}`,
+          stock: v.stock,
+          image: v.image,
+        })),
+        collectionIds,
+      };
+
+      if (mode === "create") {
+        await createProduct(payload);
+        toast.success("Producto creado exitosamente.");
+      } else if (initialData) {
+        await updateProduct(initialData.id, payload);
+        toast.success("Producto actualizado correctamente.");
+      }
 
       router.push("/admin/productos");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar el producto.");
+    } finally {
+      setSaving(false);
     }
-  }
+  };
 
-  async function handleDelete() {
+  const handleDeleteProduct = async () => {
     if (!initialData) return;
+    try {
+      await deleteProduct(initialData.id);
+      toast.success(`El producto "${initialData.name}" fue eliminado.`);
+      router.push("/admin/productos");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al eliminar el producto.");
+    }
+  };
 
-    await deleteProduct(initialData.id);
-
-    toast.success(`"${initialData.name}" fue eliminado`);
-
-    router.push("/admin/productos");
-  }
+  const isEditing = mode === "edit";
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-6"
-      >
-        <div className="flex items-center justify-between">
-          <h1 className="font-heading text-3xl text-foreground">
-            {mode === "create" ? "Nuevo producto" : initialData?.name}
+    <form onSubmit={handleSaveProduct} className="space-y-6 pb-12">
+      {/* Global Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EBE9DF] pb-5">
+        <div className="space-y-1">
+          <Link
+            href="/admin/productos"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#555829] transition-colors mb-1 font-medium"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Volver a productos
+          </Link>
+          <h1 className="font-heading font-serif text-2xl font-bold tracking-tight text-[#34351f]">
+            {isEditing ? `Editar: ${name || initialData?.name}` : "Nuevo producto"}
           </h1>
-
-          <div className="flex gap-2">
-            {mode === "edit" && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar
-              </Button>
-            )}
-
-            <Button type="submit">Guardar producto</Button>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            {isEditing
+              ? "Modifica la información, catálogo, stock y configuración SEO del producto."
+              : "Crea un nuevo producto para añadirlo al catálogo de la tienda pública."}
+          </p>
         </div>
 
-        <Tabs defaultValue="info">
-          <TabsList>
-            <TabsTrigger value="info">Información</TabsTrigger>
-            <TabsTrigger value="images">Imágenes</TabsTrigger>
-            <TabsTrigger value="variants">Variantes</TabsTrigger>
-            <TabsTrigger value="collection">Colección</TabsTrigger>
-            <TabsTrigger value="config">Configuración</TabsTrigger>
-            <TabsTrigger value="seo">SEO</TabsTrigger>
-          </TabsList>
+        {/* Global Action Buttons */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteOpen(true)}
+              className="bg-white border-[#EBE9DF] text-red-600 hover:bg-red-50 hover:border-red-200 gap-1.5 text-xs h-9"
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar
+            </Button>
+          )}
 
-          {/* INFORMACIÓN */}
-          <TabsContent
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.push("/admin/productos")}
+            disabled={saving}
+            className="bg-[#F2F2EC] hover:bg-[#e6e6de] text-[#34351f] border-0 text-xs h-9 px-4 font-medium"
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            type="submit"
+            disabled={saving}
+            className="bg-[#555829] hover:bg-[#444620] text-white text-xs h-9 px-4 font-medium shadow-xs gap-1.5"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {isEditing ? "Guardar cambios" : "Guardar producto"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs Navigation Bar (ONLY 5 SUBMODULES) */}
+      <Tabs defaultValue="info" className="w-full">
+        <TabsList className="bg-[#FAF9F5] border border-[#EBE9DF] p-1 rounded-xl flex flex-wrap h-auto gap-1 mb-6">
+          <TabsTrigger
             value="info"
-            className="flex flex-col gap-4 max-w-lg pt-4"
+            className="rounded-lg text-xs font-medium px-4 py-2 text-[#34351f] data-[state=active]:bg-[#555829] data-[state=active]:text-white data-[state=active]:shadow-xs transition-colors"
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre del producto</FormLabel>
-
-                  <FormControl>
-                    <Input
-                      placeholder="Ej. Pijama Satín Beige"
-                      {...field}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoría</FormLabel>
-
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={loadingCategories}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una categoría" />
-                      </SelectTrigger>
-                    </FormControl>
-
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-
-                  <FormControl>
-                    <Textarea
-                      rows={4}
-                      placeholder="Describe el producto..."
-                      {...field}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="basePrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio base (COP)</FormLabel>
-
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="129000"
-                      name={field.name}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                      disabled={field.disabled}
-                      value={
-                        field.value === undefined
-                          ? ""
-                          : String(field.value)
-                      }
-                      onChange={(e) =>
-                        field.onChange(e.target.value)
-                      }
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-
-                    <SelectContent>
-                      <SelectItem value="activo">
-                        Activo
-                      </SelectItem>
-
-                      <SelectItem value="borrador">
-                        Borrador
-                      </SelectItem>
-
-                      <SelectItem value="archivado">
-                        Archivado
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </TabsContent>
-
-          {/* IMÁGENES */}
-          <TabsContent value="images" className="pt-4">
-            <ImageUploader
-              images={images}
-              onChange={setImages}
-            />
-          </TabsContent>
-
-          {/* VARIANTES */}
-          <TabsContent
+            Información
+          </TabsTrigger>
+          <TabsTrigger
             value="variants"
-            className="flex flex-col gap-6 pt-4"
+            className="rounded-lg text-xs font-medium px-4 py-2 text-[#34351f] data-[state=active]:bg-[#555829] data-[state=active]:text-white data-[state=active]:shadow-xs transition-colors"
           >
-            <SizesColorsEditor
-              sizes={sizes}
-              colors={colors}
-              onAddSize={addSize}
-              onRemoveSize={removeSize}
-              onAddColor={addColor}
-              onRemoveColor={removeColor}
-            />
-
-            <VariantMatrix
-              sizes={sizes}
-              colors={colors}
-              variants={variants}
-              onUpdateVariant={updateVariant}
-            />
-          </TabsContent>
-
-          {/* COLECCIONES */}
-          <TabsContent
+            Variantes
+          </TabsTrigger>
+          <TabsTrigger
             value="collection"
-            className="pt-4 max-w-md"
+            className="rounded-lg text-xs font-medium px-4 py-2 text-[#34351f] data-[state=active]:bg-[#555829] data-[state=active]:text-white data-[state=active]:shadow-xs transition-colors"
           >
-            <p className="text-sm font-medium text-foreground mb-3">
-              Asignar a colecciones
-            </p>
-
-            {loadingCollections ? (
-              <p className="text-sm text-muted-foreground">
-                Cargando colecciones...
-              </p>
-            ) : collections.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay colecciones disponibles.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {collections.map((c) => (
-                  <label
-                    key={c.id}
-                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-secondary cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={collectionIds.includes(c.id)}
-                      onCheckedChange={(checked) =>
-                        setCollectionIds((prev) =>
-                          checked
-                            ? prev.includes(c.id)
-                              ? prev
-                              : [...prev, c.id]
-                            : prev.filter(
-                                (id) => id !== c.id
-                              )
-                        )
-                      }
-                    />
-
-                    <span
-                      className="h-3 w-3 rounded-full border border-border shrink-0"
-                      style={{
-                        backgroundColor: c.accentHex,
-                      }}
-                    />
-
-                    <span className="text-sm text-foreground">
-                      {c.name}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* CONFIGURACIÓN */}
-          <TabsContent
+            Colección
+          </TabsTrigger>
+          <TabsTrigger
             value="config"
-            className="pt-4 max-w-md flex flex-col gap-6"
+            className="rounded-lg text-xs font-medium px-4 py-2 text-[#34351f] data-[state=active]:bg-[#555829] data-[state=active]:text-white data-[state=active]:shadow-xs transition-colors"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Destacar en página principal
-                </p>
+            Configuración
+          </TabsTrigger>
+          <TabsTrigger
+            value="seo"
+            className="rounded-lg text-xs font-medium px-4 py-2 text-[#34351f] data-[state=active]:bg-[#555829] data-[state=active]:text-white data-[state=active]:shadow-xs transition-colors"
+          >
+            SEO
+          </TabsTrigger>
+        </TabsList>
 
-                <p className="text-xs text-muted-foreground">
-                  Se mostrará en el home de la landing pública
-                </p>
-              </div>
+        {/* SUBMÓDULO 1: INFORMACIÓN */}
+        <TabsContent value="info" className="focus-visible:outline-none">
+          <ProductInfoSubmodule
+            name={name}
+            setName={setName}
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            description={description}
+            setDescription={setDescription}
+            basePrice={basePrice}
+            setBasePrice={setBasePrice}
+            status={status}
+            setStatus={setStatus}
+            totalStock={totalStock}
+            setTotalStock={setTotalStock}
+            weightKg={weightKg}
+            setWeightKg={setWeightKg}
+            brand={brand}
+            setBrand={setBrand}
+            sku={sku}
+            setSku={setSku}
+            isOffer={isOffer}
+            setIsOffer={setIsOffer}
+            freeShipping={freeShipping}
+            setFreeShipping={setFreeShipping}
+            images={images}
+            setImages={setImages}
+            collectionIds={collectionIds}
+            setCollectionIds={setCollectionIds}
+            tags={tags}
+            setTags={setTags}
+            categories={categories}
+            collections={collections}
+            loadingCategories={loadingCategories}
+            loadingCollections={loadingCollections}
+          />
+        </TabsContent>
 
-              <Switch
-                checked={featuredHome}
-                onCheckedChange={setFeaturedHome}
-              />
-            </div>
+        {/* SUBMÓDULO 2: VARIANTES */}
+        <TabsContent value="variants" className="focus-visible:outline-none">
+          <ProductVariantsSubmodule
+            sizes={sizes}
+            colors={colors}
+            variants={variants}
+            basePrice={basePrice}
+            onAddSize={addSize}
+            onRemoveSize={removeSize}
+            onAddColor={addColor}
+            onRemoveColor={removeColor}
+            onUpdateVariant={updateVariant}
+          />
+        </TabsContent>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Permitir personalización
-                </p>
+        {/* SUBMÓDULO 3: COLECCIÓN */}
+        <TabsContent value="collection" className="focus-visible:outline-none">
+          <ProductCollectionSubmodule
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            collectionIds={collectionIds}
+            setCollectionIds={setCollectionIds}
+            tags={tags}
+            setTags={setTags}
+            brand={brand}
+            setBrand={setBrand}
+            categories={categories}
+            collections={collections}
+            loadingCategories={loadingCategories}
+            loadingCollections={loadingCollections}
+          />
+        </TabsContent>
 
-                <p className="text-xs text-muted-foreground">
-                  Habilita el configurador de telas, colores y
-                  bordados
-                </p>
-              </div>
+        {/* SUBMÓDULO 4: CONFIGURACIÓN */}
+        <TabsContent value="config" className="focus-visible:outline-none">
+          <ProductConfigSubmodule
+            status={status}
+            setStatus={setStatus}
+            featuredHome={featuredHome}
+            setFeaturedHome={setFeaturedHome}
+            allowCustomization={allowCustomization}
+            setAllowCustomization={setAllowCustomization}
+            visibility={visibility}
+            setVisibility={setVisibility}
+            trackInventory={trackInventory}
+            setTrackInventory={setTrackInventory}
+            totalStock={totalStock}
+            setTotalStock={setTotalStock}
+            deliveryTime={deliveryTime}
+            setDeliveryTime={setDeliveryTime}
+            shippingMethod={shippingMethod}
+            setShippingMethod={setShippingMethod}
+            warrantyPeriod={warrantyPeriod}
+            setWarrantyPeriod={setWarrantyPeriod}
+          />
+        </TabsContent>
 
-              <Switch
-                checked={allowCustomization}
-                onCheckedChange={setAllowCustomization}
-              />
-            </div>
+        {/* SUBMÓDULO 5: SEO */}
+        <TabsContent value="seo" className="focus-visible:outline-none">
+          <ProductSeoSubmodule
+            seoTitle={seoTitle}
+            setSeoTitle={setSeoTitle}
+            seoSlug={seoSlug}
+            setSeoSlug={setSeoSlug}
+            seoDescription={seoDescription}
+            setSeoDescription={setSeoDescription}
+            keywords={keywords}
+            setKeywords={setKeywords}
+            seoSocialImageUrl={seoSocialImageUrl}
+            setSeoSocialImageUrl={setSeoSocialImageUrl}
+            productName={name}
+          />
+        </TabsContent>
+      </Tabs>
 
-            <div>
-              <Label className="mb-1.5 block">
-                Tiempo de entrega estimado
-              </Label>
-
-              <Select
-                value={deliveryTime}
-                onValueChange={setDeliveryTime}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-
-                <SelectContent>
-                  {DELIVERY_TIME_OPTIONS.map((option) => (
-                    <SelectItem
-                      key={option}
-                      value={option}
-                    >
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </TabsContent>
-
-          {/* SEO */}
-          <TabsContent value="seo" className="pt-4">
-            <SeoEditor
-              value={seo}
-              onChange={setSeo}
-            />
-          </TabsContent>
-        </Tabs>
-      </form>
-
-      {initialData && (
+      {/* Dialog para Eliminar */}
+      {isEditing && (
         <ConfirmDialog
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
-          title="Eliminar producto"
-          description={`¿Seguro que quieres eliminar "${initialData.name}"? Esta acción no se puede deshacer.`}
+          title="¿Eliminar producto?"
+          description={`¿Estás seguro de eliminar el producto "${initialData?.name}"? Esta acción no se puede deshacer.`}
           confirmText="Eliminar"
-          onConfirm={handleDelete}
+          cancelText="Cancelar"
+          destructive
+          onConfirm={handleDeleteProduct}
         />
       )}
-    </Form>
+    </form>
   );
 }

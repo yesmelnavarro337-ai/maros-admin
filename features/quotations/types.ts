@@ -7,7 +7,14 @@ export type QuotationStatus =
   | "rechazada"
   | "archivada";
 
+export interface QuotationOption {
+  optionId: string;
+  catalogType: string;
+  name: string;
+}
+
 export interface QuotationItem {
+  id?: string;
   productId?: string;
   productName: string;
   productImage?: string;
@@ -18,6 +25,7 @@ export interface QuotationItem {
   estampado?: string;
   bordado?: string;
   embroideryText?: string;
+  selectedOptions?: QuotationOption[];
   estimatedUnitPrice: number;
   quantity: number;
 }
@@ -26,6 +34,7 @@ export interface Quotation {
   id: string;
   clientId: string;
   clientName: string;
+  clientEmail?: string;
   clientPhone: string;
   clientCity: string;
   items: QuotationItem[];
@@ -33,6 +42,16 @@ export interface Quotation {
   status: QuotationStatus;
   notes: string;
   createdAt: string;
+  updatedAt?: string;
+  channel?: string;
+}
+
+export interface PagedQuotations {
+  items: Quotation[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
 }
 
 export const QUOTATION_STATUSES: { value: QuotationStatus; label: string }[] = [

@@ -19,8 +19,14 @@ export interface Season {
   heroSubtitle: string;
   heroImage?: string;
   bannerImage?: string;
+  coverImageUrl?: string;
   colors: SeasonColors;
   ctaText: string;
   ctaLink: string;
   featuredProductIds: string[];
+  isActive?: boolean;
+  productsCount?: number;
+  isVisibleStore?: boolean;
+  isFeaturedHome?: boolean;
+  allowCustomization?: boolean;
 }

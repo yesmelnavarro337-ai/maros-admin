@@ -1,6 +1,10 @@
 import { apiFetch } from "@/lib/api/client-fetcher";
 import type { CatalogItem, CatalogKey } from "../types";
 
+export type { CatalogItem, CatalogKey };
+
+export type SpecificCatalogKey = Exclude<CatalogKey, "overview">;
+
 interface ApiCustomizationOption {
   id: string;
   catalogType: string;
@@ -11,7 +15,7 @@ interface ApiCustomizationOption {
   active: boolean;
 }
 
-const CATALOG_TO_API: Record<CatalogKey, string> = {
+const CATALOG_TO_API: Record<SpecificCatalogKey, string> = {
   modelos: "Modelo",
   telas: "Tela",
   colores: "Color",
@@ -20,7 +24,7 @@ const CATALOG_TO_API: Record<CatalogKey, string> = {
   tallas: "Talla",
 };
 
-const API_TO_CATALOG: Record<string, CatalogKey> = {
+const API_TO_CATALOG: Record<string, SpecificCatalogKey> = {
   Modelo: "modelos",
   Tela: "telas",
   Color: "colores",
@@ -29,19 +33,21 @@ const API_TO_CATALOG: Record<string, CatalogKey> = {
   Talla: "tallas",
 };
 
-export type CustomizationCatalogs = Record<CatalogKey, CatalogItem[]>;
+export type CustomizationCatalogs = Record<SpecificCatalogKey, CatalogItem[]>;
 
 let cachedCatalogs: CustomizationCatalogs | null = null;
 let pendingCatalogs: Promise<CustomizationCatalogs> | null = null;
 
 function adaptItem(o: ApiCustomizationOption): CatalogItem {
+  const cat = API_TO_CATALOG[o.catalogType] ?? "modelos";
   return {
     id: o.id,
-    catalog: API_TO_CATALOG[o.catalogType] ?? "modelos",
+    catalog: cat,
     name: o.name,
     image: o.imageUrl ?? undefined,
     hex: o.colorHex ?? undefined,
     priceModifier: o.priceModifier ?? undefined,
+    active: o.active,
   };
 }
 
@@ -63,8 +69,6 @@ function groupCatalogs(options: ApiCustomizationOption[]): CustomizationCatalogs
   return catalogs;
 }
 
-// El backend entrega todos los tipos juntos. Compartimos una sola lectura entre
-// pestañas y la invalidamos explícitamente después de una mutación.
 export async function getCustomizationCatalogs(force = false): Promise<CustomizationCatalogs> {
   if (!force && cachedCatalogs) return cachedCatalogs;
   if (!force && pendingCatalogs) return pendingCatalogs;
@@ -81,9 +85,9 @@ export async function getCustomizationCatalogs(force = false): Promise<Customiza
   }
 }
 
-export async function getCatalogItems(catalog: CatalogKey): Promise<CatalogItem[]> {
+export async function getCatalogItems(catalog: SpecificCatalogKey): Promise<CatalogItem[]> {
   const catalogs = await getCustomizationCatalogs();
-  return catalogs[catalog];
+  return catalogs[catalog] || [];
 }
 
 export async function createCatalogItem(
@@ -107,9 +111,6 @@ export async function updateCatalogItem(
   id: string,
   data: Partial<CatalogItem>
 ): Promise<CatalogItem | undefined> {
-  // El backend valida las reglas por tipo usando el catalogType YA guardado
-  // del ítem (no se puede cambiar el tipo de un ítem existente) — el DTO de
-  // update solo necesita name/imageUrl/colorHex/priceModifier/active.
   const updated = await apiFetch<ApiCustomizationOption>(`CustomizationOptions/${id}`, {
     method: "PUT",
     body: {
@@ -117,7 +118,7 @@ export async function updateCatalogItem(
       imageUrl: data.image ?? null,
       colorHex: data.hex ?? null,
       priceModifier: data.priceModifier ?? null,
-      active: true,
+      active: data.active ?? true,
     },
   });
   cachedCatalogs = null;

@@ -1,5 +1,5 @@
-import { SeasonList } from "@/features/seasons/components/season-list";
+import { SeasonsTimeline } from "@/features/seasons/components/seasons-timeline";
 
 export default function TemporadasPage() {
-  return <SeasonList />;
+  return <SeasonsTimeline />;
 }

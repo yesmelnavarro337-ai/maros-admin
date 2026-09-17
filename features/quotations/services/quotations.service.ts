@@ -1,9 +1,11 @@
 import { apiFetch } from "@/lib/api/client-fetcher";
-import type { Quotation, QuotationItem, QuotationStatus } from "../types";
+import type { Quotation, QuotationItem, QuotationStatus, PagedQuotations, QuotationOption } from "../types";
 
 interface PagedResult<T> {
   items: T[];
   totalCount: number;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
 export interface ApiQuotationOption {
@@ -13,7 +15,7 @@ export interface ApiQuotationOption {
 }
 
 export interface ApiQuotationItem {
-  id: string;
+  id?: string;
   productId?: string | null;
   productName: string;
   productImageUrl?: string | null;
@@ -28,6 +30,7 @@ export interface ApiQuotation {
   id: string;
   customerId: string;
   customerName: string;
+  customerEmail?: string | null;
   customerPhone: string;
   customerCity: string;
   status: string;
@@ -35,11 +38,13 @@ export interface ApiQuotation {
   items: ApiQuotationItem[];
   referenceImages: string[];
   createdAt: string;
+  updatedAt?: string | null;
 }
 
 export const STATUS_FROM_API: Record<string, QuotationStatus> = {
   Nueva: "nueva",
   EnRevision: "en_revision",
+  "En revisión": "en_revision",
   Contactada: "contactada",
   Cotizada: "cotizada",
   Aceptada: "aceptada",
@@ -66,7 +71,14 @@ const OPTION_TYPE_TO_FIELD: Record<string, keyof QuotationItem> = {
 };
 
 function adaptItem(i: ApiQuotationItem): QuotationItem {
+  const selectedOpts: QuotationOption[] = (i.selectedOptions || []).map((o) => ({
+    optionId: o.id,
+    catalogType: o.catalogType,
+    name: o.name,
+  }));
+
   const item: QuotationItem = {
+    id: i.id,
     productId: i.productId ?? undefined,
     productName: i.productName,
     productImage: i.productImageUrl ?? undefined,
@@ -74,9 +86,10 @@ function adaptItem(i: ApiQuotationItem): QuotationItem {
     quantity: i.quantity,
     embroideryText: i.embroideryText ?? undefined,
     estimatedUnitPrice: i.estimatedUnitPrice,
+    selectedOptions: selectedOpts,
   };
 
-  for (const option of i.selectedOptions) {
+  for (const option of i.selectedOptions || []) {
     const field = OPTION_TYPE_TO_FIELD[option.catalogType];
     if (field) (item[field] as string) = option.name;
   }
@@ -89,26 +102,59 @@ export function adaptQuotation(q: ApiQuotation): Quotation {
     id: q.id,
     clientId: q.customerId,
     clientName: q.customerName,
+    clientEmail: q.customerEmail ?? undefined,
     clientPhone: q.customerPhone,
     clientCity: q.customerCity,
-    items: q.items.map(adaptItem),
-    referenceImages: q.referenceImages,
+    items: (q.items || []).map(adaptItem),
+    referenceImages: q.referenceImages || [],
     status: STATUS_FROM_API[q.status] ?? "nueva",
     notes: q.notes,
     createdAt: q.createdAt,
+    updatedAt: q.updatedAt ?? q.createdAt,
+    channel: "WhatsApp",
   };
 }
 
-export async function getQuotations(filters?: { status?: QuotationStatus | "todos"; search?: string }): Promise<Quotation[]> {
+export async function getQuotationsPaged(filters?: {
+  status?: QuotationStatus | "todos";
+  search?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}): Promise<PagedQuotations> {
   const params = new URLSearchParams();
-  params.set("pageSize", "100");
+  const pageNumber = filters?.pageNumber ?? 1;
+  const pageSize = filters?.pageSize ?? 10;
+  
+  params.set("pageNumber", pageNumber.toString());
+  params.set("pageSize", pageSize.toString());
+
   if (filters?.status && filters.status !== "todos") {
-    params.set("status", STATUS_TO_API[filters.status]);
+    params.set("status", STATUS_TO_API[filters.status] ?? filters.status);
   }
-  if (filters?.search) params.set("search", filters.search);
+  if (filters?.search && filters.search.trim()) {
+    params.set("search", filters.search.trim());
+  }
 
   const result = await apiFetch<PagedResult<ApiQuotation>>(`Quotations?${params.toString()}`);
-  return result.items.map(adaptQuotation);
+  const items = (result.items || []).map(adaptQuotation);
+  const totalCount = result.totalCount ?? items.length;
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+  return {
+    items,
+    pageNumber,
+    pageSize,
+    totalCount,
+    totalPages,
+  };
+}
+
+export async function getQuotations(filters?: {
+  status?: QuotationStatus | "todos";
+  search?: string;
+}): Promise<Quotation[]> {
+  const paged = await getQuotationsPaged({ ...filters, pageNumber: 1, pageSize: 100 });
+  return paged.items;
 }
 
 export async function getQuotationById(id: string): Promise<Quotation | undefined> {
@@ -124,19 +170,29 @@ export async function updateQuotationStatus(
   id: string,
   status: QuotationStatus
 ): Promise<Quotation | undefined> {
+  const apiStatus = STATUS_TO_API[status] ?? status;
   const updated = await apiFetch<ApiQuotation>(`Quotations/${id}/status`, {
     method: "PUT",
-    body: { status: STATUS_TO_API[status] },
+    body: { status: apiStatus },
   });
   return adaptQuotation(updated);
 }
 
-interface WhatsAppMessage {
+export interface WhatsAppMessage {
   phoneNumber: string;
   message: string;
   link: string;
 }
 
 export async function getWhatsAppLink(quotationId: string): Promise<WhatsAppMessage> {
-  return apiFetch<WhatsAppMessage>(`Quotations/${quotationId}/whatsapp`);
+  try {
+    return await apiFetch<WhatsAppMessage>(`Quotations/${quotationId}/whatsapp`);
+  } catch {
+    // Fallback logic if API isn't reach or custom message
+    return {
+      phoneNumber: "",
+      message: "Hola, te escribimos de Maros Pijamas para enviarte la cotización solicitada.",
+      link: `https://wa.me/?text=${encodeURIComponent("Hola, te escribimos de Maros Pijamas respecto a tu cotización.")}`,
+    };
+  }
 }

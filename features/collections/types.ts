@@ -8,4 +8,9 @@ export interface Collection {
   accentHex: string;
   isDefault: boolean;
   productIds: string[];
+  seasonName?: string;
+  isActive?: boolean;
+  productsCount?: number;
+  updatedAt?: string;
+  createdAt?: string;
 }

@@ -1,4 +1,4 @@
-export type UserRole = "Administrador" | "Editor" | "Viewer";
+export type UserRole = "Administrador" | "Viewer" | "Editor";
 export type UserStatus = "activo" | "inactivo" | "pendiente";
 
 export interface AdminUser {
@@ -10,4 +10,10 @@ export interface AdminUser {
   lastAccess: string;
 }
 
-export const USER_ROLES: UserRole[] = ["Administrador", "Editor", "Viewer"];
+export interface UserMetrics {
+  total: number;
+  active: number;
+  pending: number;
+}
+
+export const USER_ROLES: UserRole[] = ["Administrador", "Viewer"];

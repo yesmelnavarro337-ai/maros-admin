@@ -1,5 +1,13 @@
 import { apiFetch } from "@/lib/api/client-fetcher";
-import type { Product, ProductFilters, ProductStatus } from "../types";
+import { revalidateWeb } from "@/lib/api/revalidate-web";
+import type {
+  Product,
+  ProductFilters,
+  ProductStatus,
+  ProductDisplayStatus,
+  ProductMetrics,
+  PagedProductsResult,
+} from "../types";
 
 interface PagedResult<T> {
   items: T[];
@@ -40,16 +48,25 @@ interface ApiProduct {
   variants: ApiProductVariant[];
   collectionIds: string[];
   createdAt: string;
+  sku?: string;
+  totalStock?: number;
+  seasonName?: string;
+  imageUrl?: string | null;
 }
 
-function statusToApi(status: ProductStatus): string {
-  return { activo: "Activo", borrador: "Borrador", archivado: "Archivado" }[status];
+function statusToApi(status: string): string {
+  if (status === "activo") return "Activo";
+  if (status === "borrador") return "Borrador";
+  if (status === "archivado") return "Archivado";
+  if (status === "lowStock" || status === "stockBajo") return "LowStock";
+  if (status === "outOfStock" || status === "sinStock") return "OutOfStock";
+  return status;
 }
 
 function statusFromApi(status: string): ProductStatus {
   return (
     { Activo: "activo", Borrador: "borrador", Archivado: "archivado" }[status] as ProductStatus
-  ) ?? "borrador";
+  ) ?? "activo";
 }
 
 function adaptProduct(p: ApiProduct): Product {
@@ -58,15 +75,34 @@ function adaptProduct(p: ApiProduct): Product {
     new Map(p.variants.map((v) => [v.colorName, { name: v.colorName, hex: v.colorHex }])).values()
   );
 
+  const totalStock = p.totalStock ?? p.variants.reduce((sum, v) => sum + v.stock, 0);
+  const baseStatus = statusFromApi(p.status);
+
+  let displayStatus: ProductDisplayStatus = "Activo";
+  if (baseStatus === "borrador") displayStatus = "Borrador";
+  else if (baseStatus === "archivado") displayStatus = "Archivado";
+  else if (totalStock === 0) displayStatus = "Sin stock";
+  else if (totalStock <= 3) displayStatus = "Stock bajo";
+  else displayStatus = "Activo";
+
+  const primarySku = p.sku || p.variants[0]?.sku || `MP-${p.id.slice(0, 4).toUpperCase()}`;
+  const primaryImageUrl = p.imageUrl || p.images[0] || undefined;
+  const seasonName = p.seasonName || "Otoño - Invierno";
+
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
     categoryId: p.categoryId,
-    categoryName: p.categoryName,
+    categoryName: p.categoryName || "Pijamas de mujer",
     description: p.description,
     basePrice: p.basePrice,
-    status: statusFromApi(p.status),
+    status: baseStatus,
+    displayStatus,
+    sku: primarySku,
+    totalStock,
+    seasonName,
+    imageUrl: primaryImageUrl,
     images: p.images,
     sizes,
     colors,
@@ -112,7 +148,7 @@ interface SaveProductPayload {
 function buildApiPayload(data: SaveProductPayload) {
   return {
     name: data.name,
-    categoryId: data.categoryId,
+    categoryId: data.categoryId || null,
     description: data.description,
     basePrice: data.basePrice,
     status: statusToApi(data.status),
@@ -136,15 +172,33 @@ function buildApiPayload(data: SaveProductPayload) {
   };
 }
 
-export async function getProducts(filters?: Partial<ProductFilters>): Promise<Product[]> {
+export async function getProductMetrics(): Promise<ProductMetrics> {
+  return apiFetch<ProductMetrics>("Products/metrics");
+}
+
+export async function getProductsPaged(filters?: Partial<ProductFilters>): Promise<PagedProductsResult> {
   const params = new URLSearchParams();
-  params.set("pageSize", "100"); // el listado actual no pagina en UI todavía; se ajusta si migramos paginación visual más adelante
+  params.set("pageNumber", String(filters?.page ?? 1));
+  params.set("pageSize", String(filters?.pageSize ?? 10));
+
   if (filters?.search) params.set("search", filters.search);
   if (filters?.categoryId && filters.categoryId !== "todas") params.set("categoryId", filters.categoryId);
   if (filters?.status && filters.status !== "todos") params.set("status", statusToApi(filters.status));
+  if (filters?.seasonId && filters.seasonId !== "todas") params.set("seasonId", filters.seasonId);
 
   const result = await apiFetch<PagedResult<ApiProduct>>(`Products?${params.toString()}`);
-  return result.items.map(adaptProduct);
+  return {
+    items: result.items.map(adaptProduct),
+    totalCount: result.totalCount,
+    pageNumber: result.pageNumber,
+    pageSize: result.pageSize,
+    totalPages: result.totalPages,
+  };
+}
+
+export async function getProducts(filters?: Partial<ProductFilters>): Promise<Product[]> {
+  const paged = await getProductsPaged(filters);
+  return paged.items;
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
@@ -161,6 +215,7 @@ export async function createProduct(data: SaveProductPayload): Promise<Product> 
     method: "POST",
     body: buildApiPayload(data),
   });
+  revalidateWeb({ tag: "products" });
   return adaptProduct(created);
 }
 
@@ -169,11 +224,13 @@ export async function updateProduct(id: string, data: SaveProductPayload): Promi
     method: "PUT",
     body: buildApiPayload(data),
   });
+  revalidateWeb({ tag: "products" });
   return adaptProduct(updated);
 }
 
 export async function deleteProduct(id: string): Promise<void> {
   await apiFetch<void>(`Products/${id}`, { method: "DELETE" });
+  revalidateWeb({ tag: "products" });
 }
 
 export function toSavePayload(product: Product): SaveProductPayload {

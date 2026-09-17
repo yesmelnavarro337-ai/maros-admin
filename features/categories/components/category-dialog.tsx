@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import type { Category } from "../types";
 
 interface CategoryDialogProps {
@@ -22,39 +23,62 @@ interface CategoryDialogProps {
 
 export function CategoryDialog({ open, onOpenChange, editingCategory, onSave }: CategoryDialogProps) {
   const [name, setName] = useState(editingCategory?.name ?? "");
+  const [confirmSave, setConfirmSave] = useState(false);
+
+  useEffect(() => {
+    setName(editingCategory?.name ?? "");
+  }, [editingCategory, open]);
 
   function handleSubmit() {
     if (!name.trim()) return;
+    setConfirmSave(true);
+  }
+
+  function proceedSave() {
+    setConfirmSave(false);
     onSave(name.trim());
     onOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{editingCategory ? "Editar categoría" : "Nueva categoría"}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCategory ? "Editar categoría" : "Nueva categoría"}</DialogTitle>
+          </DialogHeader>
 
-        <div>
-          <Label className="mb-1.5 block">Nombre</Label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Pijamas de Mujer"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSubmit();
-            }}
-          />
-        </div>
+          <div>
+            <Label className="mb-1.5 block">Nombre</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ej. Pijamas de Mujer"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSubmit();
+              }}
+            />
+          </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={!name.trim()}>
-            {editingCategory ? "Guardar cambios" : "Crear"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={!name.trim()}>
+              {editingCategory ? "Guardar cambios" : "Crear"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmSave}
+        onOpenChange={(open) => !open && setConfirmSave(false)}
+        title="Confirmar guardado"
+        description={`¿Estás seguro de que quieres ${editingCategory ? "actualizar" : "crear"} la categoría "${name.trim()}"? Esta acción se aplicará en el sistema.`}
+        confirmText="Guardar"
+        onConfirm={proceedSave}
+      />
+    </>
   );
 }

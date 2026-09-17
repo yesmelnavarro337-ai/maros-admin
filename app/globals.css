@@ -11,7 +11,7 @@
   --color-brand-ivory: #faf8f4;
   --color-brand-warm-beige: #efe8d8;
   --color-brand-olive-gold: #b6ae3a;
-  --color-brand-olive: #6b6832;
+  --color-brand-olive: #555829;
   --color-brand-dark-olive: #34351f;
   --color-brand-warm-gray: #7b7b7b;
   --color-brand-border: #e4dfd2;
@@ -69,7 +69,7 @@
   --popover: #ffffff;
   --popover-foreground: #34351f;
 
-  --primary: #6b6832;
+  --primary: #555829;
   --primary-foreground: #faf8f4;
 
   --secondary: #efe8d8;
@@ -96,7 +96,7 @@
 
   --sidebar: #faf8f4;
   --sidebar-foreground: #34351f;
-  --sidebar-primary: #6b6832;
+  --sidebar-primary: #555829;
   --sidebar-primary-foreground: #faf8f4;
   --sidebar-accent: #efe8d8;
   --sidebar-accent-foreground: #34351f;

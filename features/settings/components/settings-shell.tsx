@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/shared/page-header";
 import { toast } from "@/lib/toast";
 import { getSiteSettings, updateSiteSettings } from "../services/settings.service";
 import { SettingsNav } from "./settings-nav";
@@ -17,12 +17,44 @@ import { SettingsLegalPanel } from "./settings-legal-panel";
 import { SettingsDomainPanel } from "./settings-domain-panel";
 import { SettingsBackupsPanel } from "./settings-backups-panel";
 import { SettingsSecurityPanel } from "./settings-security-panel";
+import { SETTINGS_SECTIONS } from "../types";
 import type { SettingsSectionKey, SiteSettings } from "../types";
 
-export function SettingsShell() {
+const SLUG_TO_KEY: Record<string, SettingsSectionKey> = {
+  general: "general",
+  "redes-sociales": "social",
+  whatsapp: "whatsapp",
+  contacto: "contact",
+  email: "email",
+  seo: "seo",
+  legal: "legal",
+  dominio: "domain",
+  "copias-seguridad": "backups",
+  seguridad: "security",
+};
+
+interface SettingsShellProps {
+  initialSectionSlug?: string;
+}
+
+export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const activeKeyFromSlug = initialSectionSlug ? SLUG_TO_KEY[initialSectionSlug] : undefined;
+
   const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [active, setActive] = useState<SettingsSectionKey>("general");
+  const [active, setActive] = useState<SettingsSectionKey>(activeKeyFromSlug || "general");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    // Detect URL section slug if user navigates via browser back/forward or deep links
+    const parts = pathname.split("/").filter(Boolean);
+    const lastPart = parts[parts.length - 1];
+    if (lastPart && SLUG_TO_KEY[lastPart]) {
+      setActive(SLUG_TO_KEY[lastPart]);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     getSiteSettings()
@@ -32,13 +64,21 @@ export function SettingsShell() {
       });
   }, []);
 
+  function handleSectionChange(newKey: SettingsSectionKey) {
+    setActive(newKey);
+    const targetSection = SETTINGS_SECTIONS.find((s) => s.key === newKey);
+    if (targetSection) {
+      router.push(`/admin/configuracion/${targetSection.slug}`, { scroll: false });
+    }
+  }
+
   async function handleSave() {
     if (!settings) return;
     setSaving(true);
     try {
       const updated = await updateSiteSettings(settings);
       setSettings(updated);
-      toast.success("Configuración guardada");
+      toast.success("Configuración guardada exitosamente");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo guardar la configuración.");
     } finally {
@@ -56,16 +96,53 @@ export function SettingsShell() {
     }
   }
 
-  if (!settings) return <Skeleton className="h-96 w-full rounded-lg" />;
+  if (!settings) {
+    return (
+      <div className="flex flex-col gap-6 p-2">
+        <Skeleton className="h-10 w-64" />
+        <div className="flex flex-col lg:flex-row gap-6">
+          <Skeleton className="h-96 w-64 rounded-xl shrink-0" />
+          <Skeleton className="h-96 flex-1 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
-return (
+  const activeOption = SETTINGS_SECTIONS.find((s) => s.key === active);
+
+  return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Configuración" subtitle="Ajustes generales del sitio" />
+      {/* Header Corporativo */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-4">
+        <div>
+          <h1 className="text-3xl font-serif font-semibold tracking-tight text-foreground">
+            Configuración del Sistema
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {activeOption ? `${activeOption.label} — ${activeOption.description}` : "Gestiona las opciones globales del sitio web y panel de control"}
+          </p>
+        </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <SettingsNav active={active} onChange={setActive} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-[#2D4A3E] hover:bg-[#233a30] text-white font-medium"
+          >
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </div>
+      </div>
 
-        <div className="flex-1 rounded-lg border border-border bg-card p-5">
+      {/* Contenedor Principal: Sidebar Tabs + Panel de Submódulo */}
+      <div className="flex flex-col lg:flex-row items-start gap-8">
+        <SettingsNav active={active} onChange={handleSectionChange} />
+
+        <div className="flex-1 w-full bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
           {active === "general" && (
             <SettingsGeneralPanel value={settings.general} onChange={(v) => setSettings({ ...settings, general: v })} />
           )}
@@ -97,9 +174,18 @@ return (
             <SettingsSecurityPanel value={settings.security} onChange={(v) => setSettings({ ...settings, security: v })} />
           )}
 
-          <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-border">
-            <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
+          {/* Footer de Acciones */}
+          <div className="flex justify-end items-center gap-3 mt-8 pt-5 border-t border-border/80">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-[#2D4A3E] hover:bg-[#233a30] text-white font-medium shadow-xs"
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </Button>
           </div>
         </div>
       </div>

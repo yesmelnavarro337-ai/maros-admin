@@ -13,13 +13,6 @@ export interface QuotationStatusCount {
   count: number;
 }
 
-export interface LowStockProduct {
-  id: string;
-  name: string;
-  totalStock: number;
-  thumbnailUrl?: string;
-}
-
 export interface RecentQuotationRow {
   id: string;
   clientName: string;
@@ -28,19 +21,66 @@ export interface RecentQuotationRow {
   date: string;
 }
 
+export interface KpiMetric {
+  value: number;
+  previousValue: number;
+  percentageChange: number;
+  trendText: string;
+}
+
+export interface DashboardKpis {
+  totalQuotations: KpiMetric;
+  totalCustomers: KpiMetric;
+  totalProducts: KpiMetric;
+  activeCollections: KpiMetric;
+}
+
+export interface QuotationTrendPoint {
+  day: string;
+  date: string;
+  total: number;
+}
+
+export interface QuotationStatusBreakdown {
+  status: string;
+  label: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+export interface RecentQuotation {
+  id: string;
+  code: string;
+  customerName: string;
+  createdAt: string;
+  formattedDate: string;
+  totalAmount: number;
+  formattedTotal: string;
+  status: string;
+  productSummary: string;
+}
+
+export interface LowStockProduct {
+  id: string;
+  name: string;
+  totalStock: number;
+  thumbnailUrl?: string;
+}
+
 export interface ActiveSeasonInfo {
   name: string;
-  collection: string;
+  collectionName: string;
   collectionId: string;
   startDate: string;
   endDate: string;
 }
 
-export interface DashboardData {
-  stats: DashboardStat[];
-  quotationsByStatus: QuotationStatusCount[];
-  acceptanceRate: number;
+export interface DashboardSummary {
+  kpis: DashboardKpis;
+  quotationTrend: QuotationTrendPoint[];
+  statusBreakdown: QuotationStatusBreakdown[];
+  recentQuotations: RecentQuotation[];
   lowStockProducts: LowStockProduct[];
-  recentQuotations: RecentQuotationRow[];
   activeSeason: ActiveSeasonInfo | null;
 }

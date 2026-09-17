@@ -72,7 +72,7 @@ export function useVariantMatrix(
   }, [sizes]);
 
   const updateVariant = useCallback(
-    (id: string, patch: Partial<Pick<ProductVariant, "stock" | "sku" | "image">>) => {
+    (id: string, patch: Partial<ProductVariant>) => {
       setVariants((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
     },
     []

@@ -6,63 +6,93 @@ export interface GeneralSettings {
   currency: string;
   timezone: string;
   language: string;
+  dateFormat: string;
   maintenanceMode: boolean;
   logo?: string;
-}
-
-export interface AppearanceSettingsSection {
   favicon?: string;
-  homeSections: HomeSection[];
 }
 
 export interface SocialSettings {
   instagram: string;
   facebook: string;
   tiktok: string;
+  whatsapp: string;
+  youtube: string;
+  twitter: string;
 }
 
 export interface WhatsappSettings {
   phoneNumber: string;
   defaultMessage: string;
+  buttonImage?: string;
+  position: "right" | "left";
+  buttonEnabled: boolean;
 }
 
 export interface ContactSettings {
+  phone: string;
+  email: string;
   address: string;
   businessHours: string;
+  mapImage?: string;
+  showLocation: boolean;
 }
 
 export interface EmailSettings {
-  fromName: string;
   fromEmail: string;
+  fromName: string;
+  defaultSubject: string;
+  autoReplyMessage: string;
   notifyNewQuotation: boolean;
 }
 
 export interface SeoSettings {
   metaTitle: string;
   metaDescription: string;
+  keywords: string;
+  canonicalUrl: string;
+  robotsTag: string;
+  language: string;
   socialImage?: string;
 }
 
 export interface LegalSettings {
-  termsUrl: string;
-  privacyUrl: string;
-  returnsPolicy: string;
+  privacyPolicy: string;
+  termsAndConditions: string;
+  cookiesPolicy: string;
+  termsUrl?: string;
+  privacyUrl?: string;
+  returnsPolicy?: string;
 }
 
 export interface DomainSettings {
   customDomain: string;
+  wwwRedirect: boolean;
+  serverIp: string;
   sslEnabled: boolean;
 }
 
 export interface BackupSettings {
   autoBackupEnabled: boolean;
   frequency: "diaria" | "semanal" | "mensual";
+  executionTime: string;
+  retentionDays: string;
   lastBackupDate?: string;
+  lastBackupSize?: string;
 }
 
 export interface SecuritySettings {
   twoFactorEnabled: boolean;
+  maxAttempts: number;
+  lockoutDurationMinutes: number;
+  securityNotificationsEnabled: boolean;
   sessionTimeoutMinutes: number;
+  activeSessionsCount: number;
+}
+
+export interface AppearanceSettingsSection {
+  favicon?: string;
+  homeSections: HomeSection[];
 }
 
 export interface SiteSettings {
@@ -91,15 +121,22 @@ export type SettingsSectionKey =
   | "backups"
   | "security";
 
-export const SETTINGS_SECTIONS: { key: SettingsSectionKey; label: string }[] = [
-  { key: "general", label: "General" },
-  { key: "social", label: "Redes sociales" },
-  { key: "whatsapp", label: "WhatsApp" },
-  { key: "contact", label: "Contacto" },
-  { key: "email", label: "Email" },
-  { key: "seo", label: "SEO" },
-  { key: "legal", label: "Legal" },
-  { key: "domain", label: "Dominio" },
-  { key: "backups", label: "Copias de Seguridad" },
-  { key: "security", label: "Seguridad" },
+export interface SettingsSectionOption {
+  key: SettingsSectionKey;
+  slug: string;
+  label: string;
+  description: string;
+}
+
+export const SETTINGS_SECTIONS: SettingsSectionOption[] = [
+  { key: "general", slug: "general", label: "General", description: "Información básica y localización del sitio" },
+  { key: "social", slug: "redes-sociales", label: "Redes sociales", description: "Enlaces a redes sociales y perfiles de marca" },
+  { key: "whatsapp", slug: "whatsapp", label: "WhatsApp", description: "Configuración del botón flotante y respuestas rápidas" },
+  { key: "contact", slug: "contacto", label: "Contacto", description: "Datos de contacto, dirección y mapa" },
+  { key: "email", slug: "email", label: "Email", description: "Correos corporativos y plantillas de notificación" },
+  { key: "seo", slug: "seo", label: "SEO", description: "Meta etiquetas, SERP y posicionamiento web" },
+  { key: "legal", slug: "legal", label: "Legal", description: "Políticas de privacidad, términos y ley de cookies" },
+  { key: "domain", slug: "dominio", label: "Dominio", description: "Configuración de dominio, DNS y SSL" },
+  { key: "backups", slug: "copias-seguridad", label: "Copias de Seguridad", description: "Respaldos automáticos y restauración de BD" },
+  { key: "security", slug: "seguridad", label: "Seguridad", description: "2FA, bloqueos, sesiones activas y seguridad" },
 ];
