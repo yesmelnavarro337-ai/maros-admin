@@ -130,10 +130,25 @@ export function TestimonialTable() {
   const handleDeleteConfirm = async () => {
     if (!deletingId) return;
     try {
+      const deletedId = deletingId;
       await deleteTestimonial(deletingId);
-      toast.success("Testimonio eliminado correctamente.");
+      toast.success("Eliminado correctamente");
       setDeletingId(null);
-      fetchTestimonials();
+      setData((prev) => {
+        const nextTotalCount = Math.max(0, prev.totalCount - 1);
+        const nextTotalPages = Math.ceil(nextTotalCount / prev.pageSize);
+        return {
+          ...prev,
+          items: prev.items.filter((item) => item.id !== deletedId),
+          totalCount: nextTotalCount,
+          totalPages: nextTotalPages,
+          hasNextPage: prev.pageNumber * prev.pageSize < nextTotalCount,
+          hasPreviousPage: prev.pageNumber > 1,
+        };
+      });
+      if (data.items.length === 1 && page > 1) {
+        setPage((current) => Math.max(1, current - 1));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al eliminar testimonio.");
     }

@@ -58,7 +58,7 @@ export function CatalogGrid({ config, items, loading, onChanged }: CatalogGridPr
     if (!deleteTarget) return;
     try {
       await deleteCatalogItem(deleteTarget.id);
-      toast.success(`"${deleteTarget.name}" fue eliminado`);
+      toast.success("Eliminado correctamente");
       setDeleteTarget(null);
       await onChanged();
     } catch (error) {

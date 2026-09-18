@@ -106,6 +106,7 @@ function buildApiPayload(data: SeasonPayload) {
     ctaText: data.ctaText ?? "",
     ctaLink: data.ctaLink ?? "",
     featuredProductIds: (data.featuredProductIds ?? []).filter((pid): pid is string => Boolean(pid)),
+    status: data.status ? statusToApi(data.status) : undefined,
   };
 }
 
@@ -157,11 +158,6 @@ export async function updateSeason(id: string, data: Partial<SeasonPayload>): Pr
     method: "PUT",
     body: buildApiPayload(merged),
   });
-
-  // If user selected status 'activa', trigger activate endpoint as well
-  if (data.status === "activa" && current.status !== "activa") {
-    return activateSeason(id).then((list) => list.find((s) => s.id === id) ?? adaptSeason(updated));
-  }
 
   return adaptSeason(updated);
 }

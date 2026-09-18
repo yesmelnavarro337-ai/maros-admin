@@ -60,9 +60,10 @@ export function FaqList() {
     if (!deleteTarget) return;
     try {
       await deleteFaqItem(deleteTarget.id);
-      toast.success("Pregunta eliminada");
+      toast.success("Eliminado correctamente");
+      setItems((current) => current.filter((item) => item.id !== deleteTarget.id));
+      if (expandedId === deleteTarget.id) setExpandedId(null);
       setDeleteTarget(null);
-      fetchItems();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo eliminar.");
     }

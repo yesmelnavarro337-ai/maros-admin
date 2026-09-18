@@ -75,7 +75,12 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     const responseContentType = backendResponse.headers.get("content-type");
     if (responseContentType) responseHeaders.set("content-type", responseContentType);
 
-    return new NextResponse(responseData, {
+    const hasEmptyBody =
+      backendResponse.status === 204 ||
+      backendResponse.status === 304 ||
+      responseData.byteLength === 0;
+
+    return new NextResponse(hasEmptyBody ? null : responseData, {
       status: backendResponse.status,
       headers: responseHeaders,
     });
