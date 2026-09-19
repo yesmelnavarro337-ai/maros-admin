@@ -9,9 +9,9 @@ export async function getInvitationSummary(token: string): Promise<InvitationSum
   return apiFetch<InvitationSummary>(`public/invitations/${encodeURIComponent(token)}`);
 }
 
-export async function acceptInvitation(token: string, newPassword: string): Promise<void> {
-  await apiFetch<{ message: string }>("public/invitations/accept", {
+export async function acceptInvitation(token: string, newPassword: string, email?: string): Promise<void> {
+  await apiFetch<{ message: string }>("Users/accept-invitation", {
     method: "POST",
-    body: { token, newPassword },
+    body: { token, email, newPassword },
   });
 }

@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-export function AcceptInviteForm({ token }: { token: string }) {
+export function AcceptInviteForm({ token, email }: { token: string; email?: string }) {
   const router = useRouter();
   const [summary, setSummary] = useState<InvitationSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
 
   async function onSubmit(values: AcceptInviteFormValues) {
     try {
-      await acceptInvitation(token, values.password);
+      await acceptInvitation(token, values.password, summary?.email ?? email);
       toast.success("Cuenta activada con éxito. Ya puedes iniciar sesión.");
       router.push("/login");
     } catch (error) {
@@ -92,7 +92,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
           <p className="text-lg text-foreground">
             Hola, <strong>{summary?.name}</strong>
           </p>
-          <p className="text-sm text-muted-foreground mt-1">{summary?.email}</p>
+          <p className="text-sm text-muted-foreground mt-1">{summary?.email ?? email}</p>
         </div>
 
         <FormField

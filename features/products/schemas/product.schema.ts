@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-  categoryId: z.string().min(1, "Selecciona una categoría"),
+  categoryIds: z.array(z.string()).min(1, "Selecciona al menos una categoría"),
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres"),
   basePrice: z.coerce.number().positive("El precio debe ser mayor a 0"),
   status: z.enum(["activo", "borrador", "archivado"]),

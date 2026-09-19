@@ -85,8 +85,8 @@ export function ProductQuickView({ product, onOpenChange, onStatusChange }: Prod
 
           <div className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Categoría</span>
-              <span className="text-foreground">{product.categoryId}</span>
+              <span className="text-muted-foreground">Categorías</span>
+              <span className="text-foreground text-right">{product.categoryName}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Colecciones</span>

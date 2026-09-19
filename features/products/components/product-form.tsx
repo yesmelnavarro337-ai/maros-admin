@@ -44,7 +44,13 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
 
   // Form State
   const [name, setName] = useState(initialData?.name ?? "");
-  const [categoryId, setCategoryId] = useState(initialData?.categoryId ?? "");
+  const [categoryIds, setCategoryIds] = useState<string[]>(
+    initialData?.categoryIds?.length
+      ? initialData.categoryIds
+      : initialData?.categoryId
+        ? [initialData.categoryId]
+        : []
+  );
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [basePrice, setBasePrice] = useState(initialData?.basePrice ?? 0);
   const [status, setStatus] = useState<ProductStatus>(initialData?.status ?? "borrador");
@@ -135,8 +141,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
       return;
     }
 
-    if (!categoryId) {
-      toast.error("Por favor selecciona una categoría.");
+    if (categoryIds.length === 0) {
+      toast.error("Por favor selecciona al menos una categoría.");
       return;
     }
 
@@ -149,7 +155,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     try {
       const payload = {
         name: name.trim(),
-        categoryId,
+        categoryIds,
         description: description.trim(),
         basePrice,
         status,
@@ -305,8 +311,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
           <ProductInfoSubmodule
             name={name}
             setName={setName}
-            categoryId={categoryId}
-            setCategoryId={setCategoryId}
+            categoryIds={categoryIds}
+            setCategoryIds={setCategoryIds}
             description={description}
             setDescription={setDescription}
             basePrice={basePrice}
@@ -357,8 +363,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
         {/* SUBMÓDULO 3: COLECCIÓN */}
         <TabsContent value="collection" className="focus-visible:outline-none">
           <ProductCollectionSubmodule
-            categoryId={categoryId}
-            setCategoryId={setCategoryId}
+            categoryIds={categoryIds}
+            setCategoryIds={setCategoryIds}
             collectionIds={collectionIds}
             setCollectionIds={setCollectionIds}
             tags={tags}

@@ -94,6 +94,7 @@ export const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "DELETE", pattern: new RegExp(`^Banners/${GUID}$`) },
   { method: "GET", pattern: /^Users$/ },
   { method: "POST", pattern: /^Users\/invite$/ },
+  { method: "POST", pattern: /^Users\/accept-invitation$/ },
   { method: "PUT", pattern: new RegExp(`^Users/${GUID}$`) },
   { method: "PUT", pattern: new RegExp(`^Users/${GUID}/role$`) },
   { method: "DELETE", pattern: new RegExp(`^Users/${GUID}$`) },

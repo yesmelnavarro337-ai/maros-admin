@@ -7,19 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { Category } from "@/features/categories/types";
 import type { Collection } from "@/features/collections/types";
 
 interface ProductCollectionSubmoduleProps {
-  categoryId: string;
-  setCategoryId: (val: string) => void;
+  categoryIds: string[];
+  setCategoryIds: React.Dispatch<React.SetStateAction<string[]>>;
   collectionIds: string[];
   setCollectionIds: React.Dispatch<React.SetStateAction<string[]>>;
   tags: string[];
@@ -33,8 +26,8 @@ interface ProductCollectionSubmoduleProps {
 }
 
 export function ProductCollectionSubmodule({
-  categoryId,
-  setCategoryId,
+  categoryIds,
+  setCategoryIds,
   collectionIds,
   setCollectionIds,
   tags,
@@ -48,6 +41,12 @@ export function ProductCollectionSubmodule({
 }: ProductCollectionSubmoduleProps) {
   const toggleCollection = (id: string) => {
     setCollectionIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleCategory = (id: string) => {
+    setCategoryIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
@@ -68,23 +67,38 @@ export function ProductCollectionSubmodule({
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5 space-y-5">
-            {/* Select Categoría Principal */}
+            {/* Categorías */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-[#34351f]">
-                Categoría Principal <span className="text-red-500">*</span>
+                Categorías <span className="text-red-500">*</span>
               </Label>
-              <Select value={categoryId} onValueChange={setCategoryId} disabled={loadingCategories}>
-                <SelectTrigger className="bg-white border-[#EBE9DF] focus:ring-[#555829]">
-                  <SelectValue placeholder="Selecciona categoría principal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingCategories ? (
+                <p className="text-xs text-muted-foreground py-4">Cargando categorías...</p>
+              ) : categories.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4">No hay categorías registradas.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {categories.map((c) => {
+                    const isChecked = categoryIds.includes(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                          isChecked
+                            ? "border-[#555829] bg-[#555829]/5"
+                            : "border-[#EBE9DF] bg-white hover:bg-[#FAF9F5]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Checkbox checked={isChecked} onCheckedChange={() => toggleCategory(c.id)} />
+                          <span className="text-xs font-medium text-[#34351f] truncate">{c.name}</span>
+                        </div>
+                        {isChecked && <Check className="h-4 w-4 text-[#555829] shrink-0" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Checkboxes / Lista de Colecciones Disponibles */}

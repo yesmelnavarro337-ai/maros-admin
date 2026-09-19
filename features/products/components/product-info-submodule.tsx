@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Select,
@@ -40,8 +41,8 @@ import { generateUniqueSku } from "../utils/sku-generator";
 interface ProductInfoSubmoduleProps {
   name: string;
   setName: (val: string) => void;
-  categoryId: string;
-  setCategoryId: (val: string) => void;
+  categoryIds: string[];
+  setCategoryIds: React.Dispatch<React.SetStateAction<string[]>>;
   description: string;
   setDescription: (val: string) => void;
   basePrice: number;
@@ -75,8 +76,8 @@ interface ProductInfoSubmoduleProps {
 export function ProductInfoSubmodule({
   name,
   setName,
-  categoryId,
-  setCategoryId,
+  categoryIds,
+  setCategoryIds,
   description,
   setDescription,
   basePrice,
@@ -164,8 +165,18 @@ export function ProductInfoSubmodule({
     setDescription(formatted);
   };
 
-  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name || "Categoría";
+  const selectedCategoryName =
+    categories
+      .filter((c) => categoryIds.includes(c.id))
+      .map((c) => c.name)
+      .join(", ") || "Categoría";
   const coverImage = images[0] || null;
+
+  const toggleCategory = (id: string) => {
+    setCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((categoryId) => categoryId !== id) : [...prev, id]
+    );
+  };
 
   const formatCOP = (num: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -205,23 +216,33 @@ export function ProductInfoSubmodule({
               />
             </div>
 
-            {/* Categoría */}
+            {/* Categorías */}
             <div className="space-y-1.5">
               <Label htmlFor="prod-cat" className="text-xs font-semibold text-[#34351f]">
-                Categoría <span className="text-red-500">*</span>
+                Categorías <span className="text-red-500">*</span>
               </Label>
-              <Select value={categoryId} onValueChange={setCategoryId} disabled={loadingCategories}>
-                <SelectTrigger id="prod-cat" className="bg-white border-[#EBE9DF] focus:ring-[#555829]">
-                  <SelectValue placeholder="Selecciona una categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingCategories ? (
+                <p className="text-xs text-muted-foreground py-2">Cargando categorías...</p>
+              ) : (
+                <div id="prod-cat" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {categories.map((c) => {
+                    const selected = categoryIds.includes(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors ${
+                          selected
+                            ? "border-[#555829] bg-[#555829]/5 text-[#34351f]"
+                            : "border-[#EBE9DF] bg-white text-[#34351f] hover:bg-[#FAF9F5]"
+                        }`}
+                      >
+                        <Checkbox checked={selected} onCheckedChange={() => toggleCategory(c.id)} />
+                        <span className="truncate font-medium">{c.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Descripción con Editor / Formato */}

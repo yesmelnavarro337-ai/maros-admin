@@ -63,7 +63,7 @@ export function CategoryDetailView({ categoryId }: CategoryDetailViewProps) {
       setAllProducts(prodsData);
 
       const assignedIds = new Set(
-        prodsData.filter((p) => p.categoryId === categoryId).map((p) => p.id)
+        prodsData.filter((p) => p.categoryIds.includes(categoryId)).map((p) => p.id)
       );
       setAssignedSet(new Set(assignedIds));
       setInitialAssignedSet(new Set(assignedIds));
@@ -155,7 +155,7 @@ export function CategoryDetailView({ categoryId }: CategoryDetailViewProps) {
 
       allProducts.forEach((p) => {
         const isCurrentlyAssignedInState = assignedSet.has(p.id);
-        const wasAssignedInBackend = p.categoryId === categoryId;
+        const wasAssignedInBackend = p.categoryIds.includes(categoryId);
 
         if (isCurrentlyAssignedInState && !wasAssignedInBackend) {
           toLink.push(p);
@@ -167,10 +167,10 @@ export function CategoryDetailView({ categoryId }: CategoryDetailViewProps) {
       // Ejecutar actualizaciones
       const updates = [
         ...toLink.map((p) =>
-          updateProduct(p.id, { ...toSavePayload(p), categoryId })
+          updateProduct(p.id, { ...toSavePayload(p), categoryIds: [...new Set([...p.categoryIds, categoryId])] })
         ),
         ...toUnlink.map((p) =>
-          updateProduct(p.id, { ...toSavePayload(p), categoryId: "" })
+          updateProduct(p.id, { ...toSavePayload(p), categoryIds: p.categoryIds.filter((id) => id !== categoryId) })
         ),
       ];
 
@@ -361,16 +361,16 @@ export function CategoryDetailView({ categoryId }: CategoryDetailViewProps) {
             <TableBody>
               {filteredProducts.map((product) => {
                 const isSelected = assignedSet.has(product.id);
-                const wasAssignedToThis = product.categoryId === categoryId;
+                const wasAssignedToThis = product.categoryIds.includes(categoryId);
 
                 let categoryStatusText = "Sin categoría";
                 let badgeVariant: "default" | "secondary" | "outline" = "outline";
 
-                if (product.categoryId === categoryId) {
+                if (wasAssignedToThis) {
                   categoryStatusText = "Asignado a esta categoría";
                   badgeVariant = "default";
-                } else if (product.categoryName) {
-                  categoryStatusText = `Categoría: ${product.categoryName}`;
+                } else if (product.categories.length > 0) {
+                  categoryStatusText = `Categorías: ${product.categories.map((c) => c.name).join(", ")}`;
                   badgeVariant = "secondary";
                 }
 

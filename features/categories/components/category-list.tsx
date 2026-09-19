@@ -109,7 +109,7 @@ export function CategoryList() {
     if (!deleteTarget) return;
     try {
       const allProducts = await getProducts();
-      const linked = allProducts.filter((p: Product) => p.categoryId === deleteTarget.id);
+      const linked = allProducts.filter((p: Product) => p.categoryIds.includes(deleteTarget.id));
       if (linked.length > 0) {
         toast.error(
           `No se puede eliminar la categoría "${deleteTarget.name}" porque tiene ${linked.length} producto(s) asignado(s). Desvínculalos primero.`

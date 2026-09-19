@@ -21,10 +21,18 @@ export interface ProductVariant {
   status?: string;
 }
 
+export interface ProductCategorySummary {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   slug: string;
+  categoryIds: string[];
+  categories: ProductCategorySummary[];
   categoryId: string;
   categoryName: string;
   description: string;

@@ -27,12 +27,20 @@ interface ApiProductVariant {
   imageUrl?: string | null;
 }
 
+interface ApiProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface ApiProduct {
   id: string;
   name: string;
   slug: string;
-  categoryId: string;
+  categoryId?: string | null;
   categoryName: string;
+  categoryIds?: string[] | null;
+  categories?: ApiProductCategory[] | null;
   description: string;
   basePrice: number;
   status: string;
@@ -88,13 +96,22 @@ function adaptProduct(p: ApiProduct): Product {
   const primarySku = p.sku || p.variants[0]?.sku || `MP-${p.id.slice(0, 4).toUpperCase()}`;
   const primaryImageUrl = p.imageUrl || p.images[0] || undefined;
   const seasonName = p.seasonName || "Otoño - Invierno";
+  const categoryIds = p.categoryIds?.length ? p.categoryIds : p.categoryId ? [p.categoryId] : [];
+  const categories = p.categories?.length
+    ? p.categories
+    : p.categoryId
+      ? [{ id: p.categoryId, name: p.categoryName || "Pijamas de mujer", slug: "" }]
+      : [];
+  const categoryName = p.categoryName || categories.map((c) => c.name).join(", ") || "Pijamas de mujer";
 
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    categoryId: p.categoryId,
-    categoryName: p.categoryName || "Pijamas de mujer",
+    categoryIds,
+    categories,
+    categoryId: categoryIds[0] ?? "",
+    categoryName,
     description: p.description,
     basePrice: p.basePrice,
     status: baseStatus,
@@ -132,7 +149,7 @@ function adaptProduct(p: ApiProduct): Product {
 
 interface SaveProductPayload {
   name: string;
-  categoryId: string;
+  categoryIds: string[];
   description: string;
   basePrice: number;
   status: ProductStatus;
@@ -148,7 +165,7 @@ interface SaveProductPayload {
 function buildApiPayload(data: SaveProductPayload) {
   return {
     name: data.name,
-    categoryId: data.categoryId || null,
+    categoryIds: data.categoryIds,
     description: data.description,
     basePrice: data.basePrice,
     status: statusToApi(data.status),
@@ -236,7 +253,7 @@ export async function deleteProduct(id: string): Promise<void> {
 export function toSavePayload(product: Product): SaveProductPayload {
   return {
     name: product.name,
-    categoryId: product.categoryId,
+    categoryIds: product.categoryIds,
     description: product.description,
     basePrice: product.basePrice,
     status: product.status,
