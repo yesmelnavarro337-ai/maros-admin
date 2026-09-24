@@ -8,4 +8,6 @@ export interface Category {
   productsCount: number;
   createdAt: string;
   updatedAt?: string | null;
-}
+  defaultPrice?: number | null;
+  surchargeReason?: string | null;
+}

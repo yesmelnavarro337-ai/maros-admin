@@ -15,7 +15,9 @@ import {
   Loader2,
   Sparkles,
   ShoppingBag,
+  Info,
 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -186,6 +188,11 @@ export function ProductInfoSubmodule({
     }).format(num || 0);
   };
 
+  const selectedCategories = categories.filter((c) => categoryIds.includes(c.id));
+  const hasCategory = categoryIds.length > 0;
+  const primaryDefaultPrice = selectedCategories.find((c) => c.defaultPrice != null)?.defaultPrice;
+  const surchargeCategories = selectedCategories.filter((c) => c.surchargeReason && c.surchargeReason.trim().length > 0);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* Columna Izquierda (Formulario Principal - 7 cols) */}
@@ -236,11 +243,47 @@ export function ProductInfoSubmodule({
                             : "border-[#EBE9DF] bg-white text-[#34351f] hover:bg-[#FAF9F5]"
                         }`}
                       >
-                        <Checkbox checked={selected} onCheckedChange={() => toggleCategory(c.id)} />
-                        <span className="truncate font-medium">{c.name}</span>
+                        <Checkbox
+                          checked={selected}
+                          onCheckedChange={() => {
+                            toggleCategory(c.id);
+                            if (!selected && c.defaultPrice && (!basePrice || basePrice === 0)) {
+                              setBasePrice(c.defaultPrice);
+                            }
+                          }}
+                        />
+                        <div className="flex flex-col truncate">
+                          <span className="truncate font-medium">{c.name}</span>
+                          {c.defaultPrice ? (
+                            <span className="text-[10px] text-muted-foreground">
+                              Sugerido: ${c.defaultPrice.toLocaleString("es-CO")} COP
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {surchargeCategories.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  {surchargeCategories.map((c) => (
+                    <Alert key={c.id} variant="info" className="bg-amber-50 border-amber-200 p-3">
+                      <div className="flex gap-2.5 items-start">
+                        <Info className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                        <div>
+                          <AlertTitle className="text-amber-900 font-semibold text-xs">
+                            Regla de precio de categoría: {c.name}
+                          </AlertTitle>
+                          <AlertDescription className="text-amber-800 text-xs mt-0.5">
+                            {c.surchargeReason}
+                            {c.defaultPrice ? ` — Precio sugerido base: $${c.defaultPrice.toLocaleString("es-CO")} COP` : ""}
+                          </AlertDescription>
+                        </div>
+                      </div>
+                    </Alert>
+                  ))}
                 </div>
               )}
             </div>
@@ -334,11 +377,29 @@ export function ProductInfoSubmodule({
                   type="number"
                   min={0}
                   step={1000}
+                  disabled={!hasCategory}
                   value={basePrice || ""}
                   onChange={(e) => setBasePrice(parseFloat(e.target.value) || 0)}
-                  placeholder="129000"
-                  className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+                  placeholder={
+                    !hasCategory
+                      ? "Selecciona una categoría primero..."
+                      : primaryDefaultPrice
+                        ? `Precio sugerido: $${primaryDefaultPrice.toLocaleString("es-CO")} COP`
+                        : "Ej. 129000"
+                  }
+                  className={`bg-white border-[#EBE9DF] focus-visible:ring-[#555829] ${
+                    !hasCategory ? "opacity-60 cursor-not-allowed bg-muted/40" : ""
+                  }`}
                 />
+                {!hasCategory ? (
+                  <p className="text-[11px] text-amber-700 font-medium">
+                    Debes seleccionar al menos una categoría para activar e ingresar el precio base.
+                  </p>
+                ) : primaryDefaultPrice && (!basePrice || basePrice === 0) ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Sugerido: ${primaryDefaultPrice.toLocaleString("es-CO")} COP
+                  </p>
+                ) : null}
               </div>
 
               {/* Estado */}
