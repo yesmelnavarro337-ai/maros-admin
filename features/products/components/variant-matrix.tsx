@@ -10,7 +10,7 @@ interface VariantMatrixProps {
   sizes: string[];
   colors: ProductColor[];
   variants: ProductVariant[];
-  onUpdateVariant: (id: string, patch: Partial<Pick<ProductVariant, "stock" | "sku" | "image">>) => void;
+  onUpdateVariant: (id: string, patch: Partial<Pick<ProductVariant, "stock" | "sku" | "price" | "image">>) => void;
 }
 
 export function VariantMatrix({ sizes, colors, variants, onUpdateVariant }: VariantMatrixProps) {

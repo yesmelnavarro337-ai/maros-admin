@@ -24,6 +24,7 @@ interface ApiProductVariant {
   colorHex: string;
   sku: string;
   stock: number;
+  price?: number | null;
   imageUrl?: string | null;
 }
 
@@ -130,6 +131,7 @@ function adaptProduct(p: ApiProduct): Product {
       colorHex: v.colorHex,
       sku: v.sku,
       stock: v.stock,
+      price: v.price ?? undefined,
       image: v.imageUrl ?? undefined,
     })),
     collectionIds: p.collectionIds,
@@ -158,7 +160,15 @@ interface SaveProductPayload {
   deliveryTime: string;
   seo: { title: string; description: string; socialImage?: string; altText?: string };
   images: string[];
-  variants: { size: string; colorName: string; colorHex: string; sku: string; stock: number; image?: string }[];
+  variants: {
+    size: string;
+    colorName: string;
+    colorHex: string;
+    sku: string;
+    stock: number;
+    price?: number | null;
+    image?: string;
+  }[];
   collectionIds: string[];
 }
 
@@ -183,6 +193,7 @@ function buildApiPayload(data: SaveProductPayload) {
       colorHex: v.colorHex,
       sku: v.sku,
       stock: v.stock,
+      price: v.price ?? null,
       imageUrl: v.image ?? null,
     })),
     collectionIds: data.collectionIds,
@@ -273,6 +284,7 @@ export function toSavePayload(product: Product): SaveProductPayload {
       colorHex: v.colorHex,
       sku: v.sku,
       stock: v.stock,
+      price: v.price,
       image: v.image,
     })),
     collectionIds: product.collectionIds,

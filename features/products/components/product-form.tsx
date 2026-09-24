@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Trash2, Save, Loader2 } from "lucide-react";
@@ -110,6 +110,14 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     initialData?.variants ?? []
   );
 
+  const selectedCategoryNames = useMemo(
+    () =>
+      categories
+        .filter((category) => categoryIds.includes(category.id))
+        .map((category) => category.name),
+    [categories, categoryIds]
+  );
+
   // Dialogs & Submitting state
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -175,6 +183,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
           colorHex: v.colorHex,
           sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName),
           stock: v.stock,
+          price: v.price ?? null,
           image: v.image,
         })),
         collectionIds,
@@ -351,6 +360,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             colors={colors}
             variants={variants}
             basePrice={basePrice}
+            selectedCategoryNames={selectedCategoryNames}
             onAddSize={addSize}
             onRemoveSize={removeSize}
             onAddColor={addColor}

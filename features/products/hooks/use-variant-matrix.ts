@@ -23,6 +23,7 @@ function regenerateVariants(
           colorHex: color.hex,
           sku: generateUniqueSku(size, color.name),
           stock: 0,
+          price: undefined,
           image: undefined,
         }
       );

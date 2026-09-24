@@ -17,7 +17,7 @@ export interface ProductVariant {
   sku: string;
   stock: number;
   image?: string;
-  price?: number;
+  price?: number | null;
   status?: string;
 }
 

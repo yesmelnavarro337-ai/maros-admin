@@ -30,6 +30,7 @@ interface ProductVariantsSubmoduleProps {
   colors: ProductColor[];
   variants: ProductVariant[];
   basePrice: number;
+  selectedCategoryNames?: string[];
   onAddSize: (size: string) => void;
   onRemoveSize: (size: string) => void;
   onAddColor: (color: ProductColor) => void;
@@ -43,6 +44,7 @@ export function ProductVariantsSubmodule({
   colors,
   variants,
   basePrice,
+  selectedCategoryNames = [],
   onAddSize,
   onRemoveSize,
   onAddColor,
@@ -73,6 +75,7 @@ export function ProductVariantsSubmodule({
 
   const activeSelectedVariant =
     variants.find((v) => v.id === selectedVariantId) || variants[0] || null;
+  const categoryContext = selectedCategoryNames.length > 0 ? selectedCategoryNames : ["Producto base"];
 
   const formatCOP = (num: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -80,6 +83,16 @@ export function ProductVariantsSubmodule({
       currency: "COP",
       maximumFractionDigits: 0,
     }).format(num || 0);
+  };
+
+  const getPriceHint = (price: number | null | undefined) => {
+    if (price == null) return `Hereda ${formatCOP(basePrice)}`;
+
+    const difference = price - basePrice;
+    if (difference === 0) return "Igual al precio base";
+
+    const prefix = difference > 0 ? "+" : "-";
+    return `${prefix} ${formatCOP(Math.abs(difference))} sobre el base`;
   };
 
   return (
@@ -182,6 +195,7 @@ export function ProductVariantsSubmodule({
                   <TableRow className="border-[#EBE9DF]">
                     <TableHead className="w-[60px] text-xs font-semibold text-[#34351f]">Color</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">Talla</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#34351f]">Categoría / tipo</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">SKU</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">Stock</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">Precio</TableHead>
@@ -191,14 +205,13 @@ export function ProductVariantsSubmodule({
                 <TableBody>
                   {filteredVariants.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-xs text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-xs text-muted-foreground">
                         No hay variantes agregadas o coincidentes con el filtro.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredVariants.map((v) => {
                       const isSelected = activeSelectedVariant?.id === v.id;
-                      const variantPrice = v.price || basePrice;
                       const hasStock = v.stock > 0;
 
                       return (
@@ -223,6 +236,29 @@ export function ProductVariantsSubmodule({
                           {/* Talla */}
                           <TableCell className="py-2 text-xs font-bold text-[#34351f]">
                             {v.size}
+                          </TableCell>
+
+                          {/* Categoría / Tipo */}
+                          <TableCell className="py-2">
+                            <div className="flex max-w-44 flex-wrap gap-1">
+                              {categoryContext.slice(0, 2).map((name) => (
+                                <Badge
+                                  key={name}
+                                  variant="outline"
+                                  className="border-[#EBE9DF] bg-white text-[10px] font-medium text-[#555829]"
+                                >
+                                  {name}
+                                </Badge>
+                              ))}
+                              {categoryContext.length > 2 && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-[#EBE9DF] bg-white text-[10px] font-medium text-muted-foreground"
+                                >
+                                  +{categoryContext.length - 2}
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
 
                           {/* SKU */}
@@ -265,8 +301,27 @@ export function ProductVariantsSubmodule({
                           </TableCell>
 
                           {/* Precio */}
-                          <TableCell className="py-2 text-xs text-[#555829] font-medium whitespace-nowrap">
-                            {formatCOP(variantPrice)}
+                          <TableCell className="py-2 text-xs">
+                            <Input
+                              type="number"
+                              min={0}
+                              step={100}
+                              placeholder={formatCOP(basePrice)}
+                              value={v.price ?? ""}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const parsed = Number(raw);
+                                onUpdateVariant(v.id, {
+                                  price: raw === "" || !Number.isFinite(parsed) ? undefined : parsed,
+                                });
+                              }}
+                              className="h-7 w-32 text-xs bg-white border-[#EBE9DF]"
+                              onClick={(e) => e.stopPropagation()}
+                              title={`Vacío usa el precio base: ${formatCOP(basePrice)}`}
+                            />
+                            <p className="mt-1 text-[10px] text-muted-foreground">
+                              {getPriceHint(v.price)}
+                            </p>
                           </TableCell>
 
                           {/* Estado Badge */}
@@ -343,7 +398,7 @@ export function ProductVariantsSubmodule({
 
                   <div className="flex items-center justify-between pt-2 border-t border-[#FAF9F5]">
                     <span className="font-bold text-base text-[#555829]">
-                      {formatCOP(activeSelectedVariant.price || basePrice)}
+                      {formatCOP(activeSelectedVariant.price ?? basePrice)}
                     </span>
                     <Badge
                       className={
