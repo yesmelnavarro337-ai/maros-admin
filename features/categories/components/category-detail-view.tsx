@@ -23,7 +23,7 @@ import { CategoryDialog } from "./category-dialog";
 import { toast } from "@/lib/toast";
 
 import { revalidateWeb } from "@/lib/api/revalidate-web";
-import { getCategoryById, updateCategory } from "../services/categories.service";
+import { getCategoryById, updateCategory, type CategorySavePayload } from "../services/categories.service";
 import { getProducts, updateProduct, toSavePayload } from "@/features/products/services/products.service";
 
 import type { Category } from "../types";
@@ -133,10 +133,10 @@ export function CategoryDetailView({ categoryId }: CategoryDetailViewProps) {
     });
   }
 
-  async function handleSaveCategory(newName: string) {
+  async function handleSaveCategory(payload: CategorySavePayload) {
     if (!category) return;
     try {
-      await updateCategory(category.id, { name: newName });
+      await updateCategory(category.id, payload);
       toast.success("Categoría actualizada correctamente");
       fetchData();
     } catch (error) {

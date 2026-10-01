@@ -7,6 +7,9 @@ import type {
   ProductDisplayStatus,
   ProductMetrics,
   PagedProductsResult,
+  ProductImageItem,
+  CategoryPriceEntry,
+  ProductCategorySummary,
 } from "../types";
 
 interface PagedResult<T> {
@@ -28,10 +31,22 @@ interface ApiProductVariant {
   imageUrl?: string | null;
 }
 
+interface ApiProductImage {
+  id: string;
+  url: string;
+  order: number;
+  colorHex?: string | null;
+  colorName?: string | null;
+}
+
 interface ApiProductCategory {
   id: string;
   name: string;
   slug: string;
+  defaultPrice?: number | null;
+  surchargeReason?: string | null;
+  price?: number | null;
+  productSurchargeReason?: string | null;
 }
 
 interface ApiProduct {
@@ -54,6 +69,7 @@ interface ApiProduct {
   seoSocialImageUrl?: string | null;
   seoAltText?: string | null;
   images: string[];
+  imageDetails?: ApiProductImage[] | null;
   variants: ApiProductVariant[];
   collectionIds: string[];
   createdAt: string;
@@ -98,12 +114,41 @@ function adaptProduct(p: ApiProduct): Product {
   const primaryImageUrl = p.imageUrl || p.images[0] || undefined;
   const seasonName = p.seasonName || "Otoño - Invierno";
   const categoryIds = p.categoryIds?.length ? p.categoryIds : p.categoryId ? [p.categoryId] : [];
-  const categories = p.categories?.length
-    ? p.categories
+  
+  const categories: ProductCategorySummary[] = p.categories?.length
+    ? p.categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        defaultPrice: c.defaultPrice,
+        surchargeReason: c.surchargeReason,
+        price: c.price,
+        productSurchargeReason: c.productSurchargeReason,
+      }))
     : p.categoryId
       ? [{ id: p.categoryId, name: p.categoryName || "Pijamas de mujer", slug: "" }]
       : [];
+
   const categoryName = p.categoryName || categories.map((c) => c.name).join(", ") || "Pijamas de mujer";
+
+  const categoryPrices: CategoryPriceEntry[] = categories.map((c) => ({
+    categoryId: c.id,
+    price: c.price ?? undefined,
+    surchargeReason: c.productSurchargeReason ?? undefined,
+  }));
+
+  const imageDetails: ProductImageItem[] = p.imageDetails?.length
+    ? p.imageDetails.map((img) => ({
+        id: img.id,
+        url: img.url,
+        order: img.order,
+        colorHex: img.colorHex ?? undefined,
+        colorName: img.colorName ?? undefined,
+      }))
+    : p.images.map((url, idx) => ({
+        url,
+        order: idx,
+      }));
 
   return {
     id: p.id,
@@ -111,6 +156,7 @@ function adaptProduct(p: ApiProduct): Product {
     slug: p.slug,
     categoryIds,
     categories,
+    categoryPrices,
     categoryId: categoryIds[0] ?? "",
     categoryName,
     description: p.description,
@@ -122,6 +168,7 @@ function adaptProduct(p: ApiProduct): Product {
     seasonName,
     imageUrl: primaryImageUrl,
     images: p.images,
+    imageDetails,
     sizes,
     colors,
     variants: p.variants.map((v) => ({
@@ -149,9 +196,10 @@ function adaptProduct(p: ApiProduct): Product {
   };
 }
 
-interface SaveProductPayload {
+export interface SaveProductPayload {
   name: string;
   categoryIds: string[];
+  categoryPrices?: CategoryPriceEntry[];
   description: string;
   basePrice: number;
   status: ProductStatus;
@@ -160,7 +208,9 @@ interface SaveProductPayload {
   deliveryTime: string;
   seo: { title: string; description: string; socialImage?: string; altText?: string };
   images: string[];
+  imageDetails?: ProductImageItem[];
   variants: {
+    id?: string | null;
     size: string;
     colorName: string;
     colorHex: string;
@@ -172,12 +222,24 @@ interface SaveProductPayload {
   collectionIds: string[];
 }
 
+function isValidGuid(val?: string | null): boolean {
+  if (!val || typeof val !== "string") return false;
+  const trimmed = val.trim();
+  if (!trimmed || trimmed === "00000000-0000-0000-0000-000000000000") return false;
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(trimmed);
+}
+
 function buildApiPayload(data: SaveProductPayload) {
   return {
     name: data.name,
     categoryIds: data.categoryIds,
+    categoryPrices: data.categoryPrices?.map((cp) => ({
+      categoryId: cp.categoryId,
+      price: cp.price != null && !isNaN(Number(cp.price)) ? Number(cp.price) : null,
+      surchargeReason: cp.surchargeReason || null,
+    })),
     description: data.description,
-    basePrice: data.basePrice,
+    basePrice: Number(data.basePrice),
     status: statusToApi(data.status),
     featuredHome: data.featuredHome,
     allowCustomization: data.allowCustomization,
@@ -187,13 +249,24 @@ function buildApiPayload(data: SaveProductPayload) {
     seoSocialImageUrl: data.seo.socialImage ?? null,
     seoAltText: data.seo.altText ?? null,
     imageUrls: data.images,
+    images: (data.imageDetails && data.imageDetails.length > 0
+      ? data.imageDetails
+      : data.images.map((url, idx): ProductImageItem => ({ url, order: idx }))
+    ).map((img, idx) => ({
+      id: img.id && isValidGuid(img.id) ? img.id : null,
+      url: img.url,
+      order: img.order ?? idx,
+      colorHex: img.colorHex || null,
+      colorName: img.colorName || null,
+    })),
     variants: data.variants.map((v) => ({
+      id: v.id && isValidGuid(v.id) ? v.id : null,
       size: v.size,
       colorName: v.colorName,
       colorHex: v.colorHex,
       sku: v.sku,
-      stock: v.stock,
-      price: v.price ?? null,
+      stock: Number(v.stock),
+      price: v.price != null && !isNaN(Number(v.price)) ? Number(v.price) : null,
       imageUrl: v.image ?? null,
     })),
     collectionIds: data.collectionIds,
@@ -265,6 +338,7 @@ export function toSavePayload(product: Product): SaveProductPayload {
   return {
     name: product.name,
     categoryIds: product.categoryIds,
+    categoryPrices: product.categoryPrices,
     description: product.description,
     basePrice: product.basePrice,
     status: product.status,
@@ -278,6 +352,7 @@ export function toSavePayload(product: Product): SaveProductPayload {
       altText: product.seo.altText,
     },
     images: product.images,
+    imageDetails: product.imageDetails,
     variants: product.variants.map((v) => ({
       size: v.size,
       colorName: v.colorName,

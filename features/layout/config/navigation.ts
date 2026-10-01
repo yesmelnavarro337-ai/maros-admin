@@ -13,6 +13,7 @@ import {
   GalleryHorizontalEnd,
   PanelTop,
   Sparkles,
+  Home,
   Settings,
   UserCog,
   type LucideIcon,
@@ -43,6 +44,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Banners", href: "/admin/banners", icon: GalleryHorizontalEnd },
   { label: "Encabezados", href: "/admin/configuracion/headers", icon: PanelTop },
   { label: "Apariencia", href: "/admin/apariencia", icon: Sparkles },
+  { label: "Contenido Home", href: "/admin/contenido-home", icon: Home },
   { label: "Configuración", href: "/admin/configuracion", icon: Settings },
   { label: "Usuarios", href: "/admin/usuarios", icon: UserCog },
 ];

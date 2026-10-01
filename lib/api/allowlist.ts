@@ -105,6 +105,8 @@ export const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "POST", pattern: /^Settings\/.*$/ },
   { method: "GET", pattern: /^admin\/page-headers$/ },
   { method: "PUT", pattern: /^admin\/page-headers\/[a-z]+$/ },
+  { method: "GET", pattern: /^home-content(\?.*)?$/ },
+  { method: "PUT", pattern: /^home-content\/[a-z-]+$/ },
   { method: "GET", pattern: /^public\/invitations\/[A-Za-z0-9_-]+$/ },
   { method: "POST", pattern: /^public\/invitations\/accept$/ },
   { method: "GET", pattern: /^Profile\/me$/ },

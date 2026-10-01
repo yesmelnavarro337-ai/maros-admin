@@ -46,7 +46,11 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
       body = outgoingFormData;
     } else {
       if (contentType) headers.set("content-type", contentType);
-      body = request.body ?? undefined;
+      const textBody = await request.text();
+      if (joinedPath.toLowerCase().includes("products")) {
+        console.log(`[Proxy Payload] ${method} /api/${joinedPath}:`, textBody);
+      }
+      body = textBody;
     }
   }
 

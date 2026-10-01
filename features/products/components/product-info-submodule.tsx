@@ -37,7 +37,7 @@ import {
 import { uploadImage } from "@/lib/api/media.service";
 import type { Category } from "@/features/categories/types";
 import type { Collection } from "@/features/collections/types";
-import type { ProductStatus } from "../types";
+import type { CategoryPriceEntry, ProductColor, ProductImageItem, ProductStatus } from "../types";
 import { generateUniqueSku } from "../utils/sku-generator";
 
 interface ProductInfoSubmoduleProps {
@@ -45,6 +45,8 @@ interface ProductInfoSubmoduleProps {
   setName: (val: string) => void;
   categoryIds: string[];
   setCategoryIds: React.Dispatch<React.SetStateAction<string[]>>;
+  categoryPrices?: CategoryPriceEntry[];
+  setCategoryPrices?: React.Dispatch<React.SetStateAction<CategoryPriceEntry[]>>;
   description: string;
   setDescription: (val: string) => void;
   basePrice: number;
@@ -65,6 +67,9 @@ interface ProductInfoSubmoduleProps {
   setFreeShipping: (val: boolean) => void;
   images: string[];
   setImages: React.Dispatch<React.SetStateAction<string[]>>;
+  imageItems?: ProductImageItem[];
+  setImageItems?: React.Dispatch<React.SetStateAction<ProductImageItem[]>>;
+  availableColors?: ProductColor[];
   collectionIds: string[];
   setCollectionIds: React.Dispatch<React.SetStateAction<string[]>>;
   tags: string[];
@@ -100,6 +105,9 @@ export function ProductInfoSubmodule({
   setFreeShipping,
   images,
   setImages,
+  imageItems,
+  setImageItems,
+  availableColors = [],
   collectionIds,
   setCollectionIds,
   tags,
@@ -108,9 +116,28 @@ export function ProductInfoSubmodule({
   collections,
   loadingCategories,
   loadingCollections,
+  categoryPrices = [],
+  setCategoryPrices,
 }: ProductInfoSubmoduleProps) {
   const [newTagInput, setNewTagInput] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  const updateCategoryPrice = (catId: string, price?: number | null, surchargeReason?: string | null) => {
+    if (!setCategoryPrices) return;
+    setCategoryPrices((prev = []) => {
+      const existingIndex = prev.findIndex((cp) => cp.categoryId === catId);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          price: price !== undefined ? price : updated[existingIndex].price,
+          surchargeReason: surchargeReason !== undefined ? surchargeReason : updated[existingIndex].surchargeReason,
+        };
+        return updated;
+      }
+      return [...prev, { categoryId: catId, price, surchargeReason }];
+    });
+  };
 
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -126,6 +153,12 @@ export function ProductInfoSubmodule({
         }
         const res = await uploadImage(file, "products");
         setImages((prev) => [...prev, res.url]);
+        if (setImageItems) {
+          setImageItems((prev) => [
+            ...prev,
+            { url: res.url, order: prev.length, colorHex: null, colorName: null },
+          ]);
+        }
       }
       toast.success("Imágenes cargadas correctamente.");
     } catch (err) {
@@ -137,6 +170,9 @@ export function ProductInfoSubmodule({
 
   const handleRemoveImage = (indexToRemove: number) => {
     setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    if (setImageItems) {
+      setImageItems((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    }
   };
 
   const handleSetCover = (indexToCover: number) => {
@@ -145,7 +181,35 @@ export function ProductInfoSubmodule({
       const target = copy.splice(indexToCover, 1)[0];
       return [target, ...copy];
     });
+    if (setImageItems) {
+      setImageItems((prev) => {
+        const copy = [...prev];
+        const target = copy.splice(indexToCover, 1)[0];
+        return [target, ...copy];
+      });
+    }
   };
+
+  const handleUpdateImageColor = (index: number, colorHex: string | null, colorName: string | null) => {
+    if (setImageItems) {
+      setImageItems((prev) => {
+        const copy = [...prev];
+        if (copy[index]) {
+          copy[index] = {
+            ...copy[index],
+            colorHex,
+            colorName,
+          };
+        }
+        return copy;
+      });
+    }
+  };
+
+  const displayImages: ProductImageItem[] =
+    imageItems && imageItems.length > 0
+      ? imageItems
+      : images.map((url, idx) => ({ url, order: idx }));
 
   const handleAddTag = () => {
     const trimmed = newTagInput.trim().toLowerCase();
@@ -286,6 +350,82 @@ export function ProductInfoSubmodule({
                   ))}
                 </div>
               )}
+
+              {/* Input Dinámico de Precio por Categoría Seleccionada */}
+              {selectedCategories.length > 0 && (
+                <div className="space-y-3 mt-4 pt-3 border-t border-[#EBE9DF]">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-[#34351f] flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5 text-[#555829]" /> Precios específicos por categoría (Opcional)
+                    </Label>
+                    <span className="text-[11px] text-muted-foreground">
+                      Si se deja vacío, aplica el precio base
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {selectedCategories.map((c) => {
+                      const catEntry = categoryPrices?.find((cp) => cp.categoryId === c.id);
+                      const currentPrice = catEntry?.price ?? "";
+                      const currentReason = catEntry?.surchargeReason ?? "";
+                      const placeholderPrice = c.defaultPrice
+                        ? `Ej. Precio para ${c.name} ($${c.defaultPrice.toLocaleString("es-CO")})`
+                        : basePrice > 0
+                          ? `Ej. Precio para ${c.name} ($${basePrice.toLocaleString("es-CO")})`
+                          : `Ej. Precio para ${c.name} ($129.000)`;
+
+                      return (
+                        <div key={c.id} className="p-3 rounded-lg border border-[#EBE9DF] bg-[#FAF9F5] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-[#34351f] flex items-center gap-1.5">
+                              <span className="h-2 w-2 rounded-full bg-[#555829]" /> {c.name}
+                            </span>
+                            {c.defaultPrice ? (
+                              <Badge variant="outline" className="text-[10px] bg-white border-[#EBE9DF] font-normal">
+                                Sugerido categoría: ${c.defaultPrice.toLocaleString("es-CO")} COP
+                              </Badge>
+                            ) : null}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-[11px] text-muted-foreground mb-1 block">
+                                Precio asignado para {c.name} COP ($)
+                              </Label>
+                              <Input
+                                type="number"
+                                min={0}
+                                step={1000}
+                                value={currentPrice}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  updateCategoryPrice(c.id, isNaN(val) ? undefined : val, currentReason);
+                                }}
+                                placeholder={placeholderPrice}
+                                className="bg-white border-[#EBE9DF] text-xs h-8 focus-visible:ring-[#555829]"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-[11px] text-muted-foreground mb-1 block">
+                                Motivo de recargo / Detalle (Opcional)
+                              </Label>
+                              <Input
+                                type="text"
+                                value={currentReason}
+                                onChange={(e) => {
+                                  updateCategoryPrice(c.id, catEntry?.price, e.target.value);
+                                }}
+                                placeholder={c.surchargeReason || `Ej. Confección premium en ${c.name}`}
+                                className="bg-white border-[#EBE9DF] text-xs h-8 focus-visible:ring-[#555829]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Descripción con Editor / Formato */}
@@ -377,25 +517,16 @@ export function ProductInfoSubmodule({
                   type="number"
                   min={0}
                   step={1000}
-                  disabled={!hasCategory}
                   value={basePrice || ""}
                   onChange={(e) => setBasePrice(parseFloat(e.target.value) || 0)}
                   placeholder={
-                    !hasCategory
-                      ? "Selecciona una categoría primero..."
-                      : primaryDefaultPrice
-                        ? `Precio sugerido: $${primaryDefaultPrice.toLocaleString("es-CO")} COP`
-                        : "Ej. 129000"
+                    primaryDefaultPrice
+                      ? `Precio sugerido: $${primaryDefaultPrice.toLocaleString("es-CO")} COP`
+                      : "Ej. 129000"
                   }
-                  className={`bg-white border-[#EBE9DF] focus-visible:ring-[#555829] ${
-                    !hasCategory ? "opacity-60 cursor-not-allowed bg-muted/40" : ""
-                  }`}
+                  className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
                 />
-                {!hasCategory ? (
-                  <p className="text-[11px] text-amber-700 font-medium">
-                    Debes seleccionar al menos una categoría para activar e ingresar el precio base.
-                  </p>
-                ) : primaryDefaultPrice && (!basePrice || basePrice === 0) ? (
+                {primaryDefaultPrice && (!basePrice || basePrice === 0) ? (
                   <p className="text-[11px] text-muted-foreground">
                     Sugerido: ${primaryDefaultPrice.toLocaleString("es-CO")} COP
                   </p>
@@ -578,50 +709,112 @@ export function ProductInfoSubmodule({
             </label>
 
             {/* Grid de Thumbnails */}
-            {images.length > 0 && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
-                {images.map((img, idx) => {
+            {displayImages.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+                {displayImages.map((imgItem, idx) => {
                   const isCover = idx === 0;
                   return (
                     <div
-                      key={img + idx}
-                      className={`relative aspect-square rounded-md border overflow-hidden group bg-card ${
+                      key={imgItem.url + idx}
+                      className={`rounded-lg border bg-white shadow-xs overflow-hidden flex flex-col transition-all ${
                         isCover ? "border-2 border-[#555829]" : "border-[#EBE9DF]"
                       }`}
                     >
-                      <img src={img} alt={`Imagen ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div className="relative aspect-square bg-[#FAF9F5] group overflow-hidden">
+                        <img
+                          src={imgItem.url}
+                          alt={`Imagen ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
 
-                      {/* Cover Indicator */}
-                      {isCover && (
-                        <span className="absolute top-1 left-1 bg-[#555829] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-xs flex items-center gap-0.5">
-                          <Check className="h-2.5 w-2.5" /> Portada
-                        </span>
-                      )}
+                        {/* Cover Indicator */}
+                        {isCover && (
+                          <span className="absolute top-1.5 left-1.5 bg-[#555829] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-xs flex items-center gap-0.5 shadow-xs z-10">
+                            <Check className="h-2.5 w-2.5" /> Portada
+                          </span>
+                        )}
 
-                      {/* Overlay actions */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                        {!isCover && (
+                        {/* Overlay actions */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 z-10">
+                          {!isCover && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={() => handleSetCover(idx)}
+                              title="Establecer portada"
+                              className="h-7 w-7 text-white hover:bg-white/20"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon-xs"
-                            onClick={() => handleSetCover(idx)}
-                            title="Establecer portada"
-                            className="h-7 w-7 text-white hover:bg-white/20"
+                            onClick={() => handleRemoveImage(idx)}
+                            title="Eliminar imagen"
+                            className="h-7 w-7 text-red-400 hover:bg-red-500/20"
                           >
-                            <Check className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => handleRemoveImage(idx)}
-                          title="Eliminar imagen"
-                          className="h-7 w-7 text-red-400 hover:bg-red-500/20"
+                        </div>
+                      </div>
+
+                      {/* Selector de color asignado a la fotografía */}
+                      <div className="p-2 border-t border-[#FAF9F5] bg-[#FAF9F5]/40 flex flex-col gap-1">
+                        <div className="flex items-center justify-between text-[10px] font-medium text-[#7A7A6E]">
+                          <span>Color:</span>
+                          {imgItem.colorHex ? (
+                            <span className="flex items-center gap-1">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 inline-block"
+                                style={{ backgroundColor: imgItem.colorHex }}
+                              />
+                              <span className="font-semibold text-[#34351f] truncate max-w-[80px]">
+                                {imgItem.colorName || imgItem.colorHex}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic">General</span>
+                          )}
+                        </div>
+
+                        <Select
+                          value={imgItem.colorHex || "__none__"}
+                          onValueChange={(val) => {
+                            if (val === "__none__") {
+                              handleUpdateImageColor(idx, null, null);
+                            } else {
+                              const match = availableColors.find(
+                                (c) => c.hex.toLowerCase() === val.toLowerCase()
+                              );
+                              handleUpdateImageColor(
+                                idx,
+                                match ? match.hex : val,
+                                match ? match.name : val
+                              );
+                            }
+                          }}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                          <SelectTrigger className="h-7 text-[11px] bg-white border-[#EBE9DF] focus:ring-[#555829]">
+                            <SelectValue placeholder="Sin color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Sin color específico</SelectItem>
+                            {availableColors.map((c) => (
+                              <SelectItem key={c.hex} value={c.hex}>
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0"
+                                    style={{ backgroundColor: c.hex }}
+                                  />
+                                  <span className="truncate">{c.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   );
@@ -630,7 +823,7 @@ export function ProductInfoSubmodule({
                 {/* Botón "+" para agregar más */}
                 <label
                   htmlFor="product-images-add-more"
-                  className="aspect-square rounded-md border-2 border-dashed border-[#EBE9DF] bg-[#FAF9F5] hover:bg-[#F4F3ED] flex flex-col items-center justify-center text-muted-foreground cursor-pointer transition-colors"
+                  className="min-h-[140px] rounded-lg border-2 border-dashed border-[#EBE9DF] bg-[#FAF9F5] hover:bg-[#F4F3ED] flex flex-col items-center justify-center text-muted-foreground cursor-pointer transition-colors"
                 >
                   <Plus className="h-5 w-5 text-[#555829]" />
                   <span className="text-[10px] font-medium text-[#34351f] mt-0.5">Agregar</span>

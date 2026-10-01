@@ -32,6 +32,7 @@ export function SeoFields({
           onChange={(e) => onSeoDescriptionChange(e.target.value)}
           placeholder="Descripción breve para motores de búsqueda"
           rows={3}
+          maxLength={500}
         />
       </div>
     </div>

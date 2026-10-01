@@ -25,8 +25,10 @@ import {
   SHIPPING_METHOD_OPTIONS,
   WARRANTY_OPTIONS,
   type Product,
+  type ProductImageItem,
   type ProductStatus,
   type ProductVisibility,
+  type CategoryPriceEntry,
 } from "../types";
 
 interface ProductFormProps {
@@ -51,6 +53,20 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
         ? [initialData.categoryId]
         : []
   );
+  const [categoryPrices, setCategoryPrices] = useState<CategoryPriceEntry[]>(() => {
+    if (initialData?.categoryPrices?.length) {
+      return initialData.categoryPrices;
+    }
+    if (initialData?.categories?.length) {
+      return initialData.categories.map((c) => ({
+        categoryId: c.id,
+        price: c.price ?? undefined,
+        surchargeReason: c.productSurchargeReason ?? undefined,
+      }));
+    }
+    return [];
+  });
+
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [basePrice, setBasePrice] = useState(initialData?.basePrice ?? 0);
   const [status, setStatus] = useState<ProductStatus>(initialData?.status ?? "borrador");
@@ -63,6 +79,15 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
   const [freeShipping, setFreeShipping] = useState(initialData?.freeShipping ?? false);
 
   const [images, setImages] = useState<string[]>(initialData?.images ?? []);
+  const [imageItems, setImageItems] = useState<ProductImageItem[]>(() => {
+    if (initialData?.imageDetails && initialData.imageDetails.length > 0) {
+      return initialData.imageDetails;
+    }
+    return (initialData?.images ?? []).map((url, idx) => ({
+      url,
+      order: idx,
+    }));
+  });
   const [collectionIds, setCollectionIds] = useState<string[]>(initialData?.collectionIds ?? []);
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? ["satín", "pijama", "mujer"]);
 
@@ -164,6 +189,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
       const payload = {
         name: name.trim(),
         categoryIds,
+        categoryPrices: categoryPrices.filter((cp) => categoryIds.includes(cp.categoryId)),
         description: description.trim(),
         basePrice,
         status,
@@ -176,16 +202,44 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
           slug: seoSlug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           socialImage: seoSocialImageUrl,
         },
-        images,
-        variants: variants.map((v) => ({
-          size: v.size,
-          colorName: v.colorName,
-          colorHex: v.colorHex,
-          sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName),
-          stock: v.stock,
-          price: v.price ?? null,
-          image: v.image,
-        })),
+        images: imageItems.length > 0 ? imageItems.map((i) => i.url) : images,
+        imageDetails: (() => {
+          const isGuid = (val?: string | null) =>
+            val ? /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val.trim()) : false;
+          const initialImageIds = new Set(
+            initialData?.imageDetails?.map((img) => img.id).filter((id): id is string => isGuid(id)) ?? []
+          );
+          return imageItems.map((img) => ({
+            ...img,
+            id: img.id && isGuid(img.id) && initialImageIds.has(img.id) ? img.id : null,
+          }));
+        })(),
+        variants: (() => {
+          const isGuid = (val?: string | null) =>
+            val ? /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val.trim()) : false;
+          const initialVariantIds = new Set(
+            initialData?.variants?.map((v) => v.id).filter((id): id is string => isGuid(id)) ?? []
+          );
+          const unique: typeof variants = [];
+          const seen = new Set<string>();
+          for (const v of variants) {
+            const key = `${v.size.trim().toUpperCase()}_${v.colorName.trim().toUpperCase()}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              unique.push(v);
+            }
+          }
+          return unique.map((v) => ({
+            id: v.id && isGuid(v.id) && initialVariantIds.has(v.id) ? v.id : null,
+            size: v.size,
+            colorName: v.colorName,
+            colorHex: v.colorHex,
+            sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName),
+            stock: Number(v.stock),
+            price: v.price != null && !isNaN(Number(v.price)) ? Number(v.price) : null,
+            image: v.image,
+          }));
+        })(),
         collectionIds,
       };
 
@@ -322,6 +376,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             setName={setName}
             categoryIds={categoryIds}
             setCategoryIds={setCategoryIds}
+            categoryPrices={categoryPrices}
+            setCategoryPrices={setCategoryPrices}
             description={description}
             setDescription={setDescription}
             basePrice={basePrice}
@@ -342,6 +398,9 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             setFreeShipping={setFreeShipping}
             images={images}
             setImages={setImages}
+            imageItems={imageItems}
+            setImageItems={setImageItems}
+            availableColors={colors}
             collectionIds={collectionIds}
             setCollectionIds={setCollectionIds}
             tags={tags}

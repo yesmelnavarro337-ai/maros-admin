@@ -8,6 +8,7 @@ import { DashboardDonutChart } from "./dashboard-donut-chart";
 import { DashboardRecentTable } from "./dashboard-recent-table";
 import { DashboardRightPanel } from "./dashboard-right-panel";
 import { getQuotationTrend } from "../services/dashboard.service";
+import { useAuth } from "@/features/auth/context/auth-context";
 import type { DashboardSummary, QuotationTrendPoint } from "../types";
 
 interface DashboardViewProps {
@@ -15,6 +16,7 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ initialSummary }: DashboardViewProps) {
+  const { user, loading: authLoading } = useAuth();
   const [period, setPeriod] = useState<string>("7d");
   const [trendData, setTrendData] = useState<QuotationTrendPoint[]>(
     initialSummary?.quotationTrend ?? []
@@ -37,7 +39,7 @@ export function DashboardView({ initialSummary }: DashboardViewProps) {
   return (
     <div className="space-y-6 pb-12">
       {/* 1. Hero Banner */}
-      <DashboardHeroBanner userName="YESMEL" />
+      <DashboardHeroBanner userName={user?.name || "Usuario"} loading={authLoading} />
 
       {/* 2. Grid de KPIs (4 columnas con métricas reales) */}
       <DashboardKpiGrid kpis={initialSummary?.kpis} />

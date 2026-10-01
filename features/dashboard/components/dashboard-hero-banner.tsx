@@ -2,21 +2,43 @@
 
 import Image from "next/image";
 import { Heart } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export function DashboardHeroBanner({ userName = "YESMEL" }: { userName?: string }) {
+interface DashboardHeroBannerProps {
+  userName?: string;
+  loading?: boolean;
+}
+
+export function DashboardHeroBanner({ userName = "Usuario", loading = false }: DashboardHeroBannerProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
       {/* Left Greeting */}
       <div className="lg:col-span-2 flex flex-col justify-center space-y-2">
-        <p className="text-xs font-bold tracking-widest text-[#968452] uppercase">
-          BIENVENIDA, {userName.toUpperCase()} 👋
-        </p>
-        <h1 className="font-heading font-serif text-3xl md:text-4xl text-foreground font-semibold leading-tight">
-          Aquí tienes un resumen<br />de tu tienda
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-xl">
-          Gestiona tus cotizaciones, clientes, productos y mucho más desde un solo lugar.
-        </p>
+        {loading ? (
+          <>
+            <Skeleton className="h-4 w-48 bg-[#EBE9DF]" />
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-72 max-w-full bg-[#EBE9DF]" />
+              <Skeleton className="h-9 w-48 max-w-full bg-[#EBE9DF]" />
+            </div>
+            <Skeleton className="h-4 w-96 max-w-full bg-[#EBE9DF]" />
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-bold tracking-widest text-[#968452] uppercase">
+              ¡HOLA, {userName.toUpperCase()}! 👋
+            </p>
+            <h1 className="font-heading font-serif text-3xl md:text-4xl text-foreground font-semibold leading-tight">
+              Aquí tienes un resumen
+              <br />
+              de tu tienda
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-xl">
+              Gestiona tus cotizaciones, clientes, productos y mucho más desde un
+              solo lugar.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Right Hero Image Card */}

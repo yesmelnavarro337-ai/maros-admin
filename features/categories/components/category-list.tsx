@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
-import { getCategories, createCategory, updateCategory, deleteCategory } from "../services/categories.service";
+import { getCategories, createCategory, updateCategory, deleteCategory, type CategorySavePayload } from "../services/categories.service";
 import { getProducts } from "@/features/products/services/products.service";
 import type { Category } from "../types";
 import type { Product } from "@/features/products/types";
@@ -89,13 +89,13 @@ export function CategoryList() {
     setPage(1);
   }, [search]);
 
-  async function handleSave(name: string) {
+  async function handleSave(payload: CategorySavePayload) {
     try {
       if (editingCategory) {
-        await updateCategory(editingCategory.id, { name });
+        await updateCategory(editingCategory.id, payload);
         toast.success("Categoría actualizada correctamente");
       } else {
-        await createCategory({ name });
+        await createCategory(payload);
         toast.success("Categoría creada correctamente");
       }
       router.refresh();

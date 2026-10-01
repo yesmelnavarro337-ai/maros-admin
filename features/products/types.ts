@@ -9,6 +9,14 @@ export interface ProductColor {
   hex: string;
 }
 
+export interface ProductImageItem {
+  id?: string | null;
+  url: string;
+  order?: number;
+  colorHex?: string | null;
+  colorName?: string | null;
+}
+
 export interface ProductVariant {
   id: string;
   size: string;
@@ -21,10 +29,20 @@ export interface ProductVariant {
   status?: string;
 }
 
+export interface CategoryPriceEntry {
+  categoryId: string;
+  price?: number | null;
+  surchargeReason?: string | null;
+}
+
 export interface ProductCategorySummary {
   id: string;
   name: string;
   slug: string;
+  defaultPrice?: number | null;
+  surchargeReason?: string | null;
+  price?: number | null;
+  productSurchargeReason?: string | null;
 }
 
 export interface Product {
@@ -33,6 +51,7 @@ export interface Product {
   slug: string;
   categoryIds: string[];
   categories: ProductCategorySummary[];
+  categoryPrices?: CategoryPriceEntry[];
   categoryId: string;
   categoryName: string;
   description: string;
@@ -44,6 +63,7 @@ export interface Product {
   seasonName: string;
   imageUrl?: string;
   images: string[];
+  imageDetails?: ProductImageItem[];
   sizes: string[];
   colors: ProductColor[];
   variants: ProductVariant[];

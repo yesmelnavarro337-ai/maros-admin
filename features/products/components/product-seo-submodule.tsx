@@ -163,7 +163,7 @@ export function ProductSeoSubmodule({
                 onChange={(e) => setSeoDescription(e.target.value)}
                 placeholder="Resumen atractivo del producto para captar clics en resultados de búsqueda..."
                 rows={3}
-                maxLength={180}
+                maxLength={500}
                 className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829] resize-none text-xs"
               />
             </div>

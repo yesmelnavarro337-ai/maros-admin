@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const productVariantSchema = z.object({
+  id: z.string().optional().nullable(),
   size: z.string().min(1, "La talla es requerida"),
   colorName: z.string().min(1, "El color es requerido"),
   colorHex: z.string().min(1, "El color es requerido"),
@@ -10,25 +11,23 @@ const productVariantSchema = z.object({
   image: z.string().optional().nullable(),
 });
 
+const categoryPriceSchema = z.object({
+  categoryId: z.string(),
+  price: z.coerce.number().positive("El precio debe ser mayor a 0").optional().nullable(),
+  surchargeReason: z.string().optional().nullable(),
+});
+
 export const productSchema = z
   .object({
     name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
     categoryIds: z.array(z.string()).min(1, "Selecciona al menos una categoría"),
+    categoryPrices: z.array(categoryPriceSchema).optional(),
     description: z.string().min(10, "La descripción debe tener al menos 10 caracteres"),
-    basePrice: z.coerce.number(),
+    basePrice: z.coerce.number().positive("El precio base debe ser mayor a 0"),
     status: z.enum(["activo", "borrador", "archivado"]),
     variants: z.array(productVariantSchema).optional(),
     seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.categoryIds.length > 0 && (!data.basePrice || data.basePrice <= 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["basePrice"],
-        message: "El precio debe ser mayor a 0 tras seleccionar una categoría",
-      });
-    }
+    seoDescription: z.string().max(500, "La descripción SEO no puede superar los 500 caracteres").optional(),
   });
 
 // Tipo de ENTRADA: lo que el usuario escribe en el input
