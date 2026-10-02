@@ -201,18 +201,21 @@ export function ProductInfoSubmodule({
   ) => {
     if (setImageItems) {
       setImageItems((prev) => {
-        const copy = [...prev];
-        if (copy[index]) {
-          copy[index] = {
-            ...copy[index],
-            colorHex,
-            colorName,
-            primaryHex: primaryHex ?? colorHex,
-            secondaryHex: secondaryHex ?? null,
+        const base =
+          prev && prev.length > 0
+            ? [...prev]
+            : images.map((url, idx) => ({ url, order: idx }));
+        if (base[index]) {
+          base[index] = {
+            ...base[index],
+            colorHex: colorHex || primaryHex || null,
+            colorName: colorName || null,
+            primaryHex: primaryHex || colorHex || null,
+            secondaryHex: secondaryHex || null,
             isCombined: isCombined ?? false,
           };
         }
-        return copy;
+        return [...base];
       });
     }
   };
@@ -724,22 +727,28 @@ export function ProductInfoSubmodule({
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
                 {displayImages.map((imgItem, idx) => {
                   const isCover = idx === 0;
+
+                  // Buscar color coincidente por nombre prioritariamente
                   const matchedColor = availableColors.find(
                     (c) =>
-                      (imgItem.colorName && c.name.toLowerCase() === imgItem.colorName.toLowerCase()) ||
-                      (imgItem.colorHex &&
-                        ((c.primaryHex && c.primaryHex.toLowerCase() === imgItem.colorHex.toLowerCase()) ||
-                          (c.hex && c.hex.toLowerCase() === imgItem.colorHex.toLowerCase())))
+                      Boolean(imgItem.colorName) &&
+                      c.name.trim().toLowerCase() === imgItem.colorName!.trim().toLowerCase()
+                  ) || availableColors.find(
+                    (c) =>
+                      Boolean(imgItem.colorHex) &&
+                      ((c.primaryHex && c.primaryHex.toLowerCase() === imgItem.colorHex!.toLowerCase()) ||
+                        (c.hex && c.hex.toLowerCase() === imgItem.colorHex!.toLowerCase()))
                   );
 
-                  const activeColorInfo = matchedColor || {
+                  const activeColorInfo = matchedColor || (imgItem.colorName || imgItem.colorHex ? {
                     name: imgItem.colorName || undefined,
                     primaryHex: imgItem.primaryHex || imgItem.colorHex || undefined,
                     secondaryHex: imgItem.secondaryHex || undefined,
                     isCombined: imgItem.isCombined ?? false,
-                  };
+                  } : null);
 
-                  const hasColor = Boolean(activeColorInfo.name || activeColorInfo.primaryHex);
+                  const hasColor = Boolean(activeColorInfo?.name || activeColorInfo?.primaryHex);
+                  const currentSelectValue = matchedColor?.name || imgItem.colorName || "__none__";
 
                   return (
                     <div
@@ -763,7 +772,7 @@ export function ProductInfoSubmodule({
                         )}
 
                         {/* Badge Flotante de Color Asociado */}
-                        {hasColor && (
+                        {hasColor && activeColorInfo && (
                           <span
                             className="absolute top-1.5 right-1.5 bg-white/95 backdrop-blur-xs border border-black/10 rounded-full py-0.5 px-2 flex items-center gap-1.5 shadow-xs z-10 text-[9px] font-semibold text-[#34351f] max-w-[80%]"
                             title={`Color: ${activeColorInfo.name || "Asignado"}`}
@@ -807,7 +816,7 @@ export function ProductInfoSubmodule({
                       <div className="p-2 border-t border-[#FAF9F5] bg-[#FAF9F5]/40 flex flex-col gap-1.5">
                         <div className="flex items-center justify-between text-[10px] font-medium text-[#7A7A6E]">
                           <span>Color:</span>
-                          {hasColor ? (
+                          {hasColor && activeColorInfo ? (
                             <span className="flex items-center gap-1.5">
                               <span
                                 className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 inline-block shadow-2xs"
@@ -828,13 +837,13 @@ export function ProductInfoSubmodule({
                         </div>
 
                         <Select
-                          value={activeColorInfo.name || "__none__"}
-                          onValueChange={(val) => {
-                            if (val === "__none__") {
+                          value={currentSelectValue}
+                          onValueChange={(selectedColorName) => {
+                            if (selectedColorName === "__none__") {
                               handleUpdateImageColor(idx, null, null, null, null, false);
                             } else {
                               const match = availableColors.find(
-                                (c) => c.name.toLowerCase() === val.toLowerCase()
+                                (c) => c.name.trim().toLowerCase() === selectedColorName.trim().toLowerCase()
                               );
                               if (match) {
                                 handleUpdateImageColor(
@@ -854,15 +863,15 @@ export function ProductInfoSubmodule({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">Sin color específico (General)</SelectItem>
-                            {availableColors.map((c) => (
-                              <SelectItem key={c.name} value={c.name}>
+                            {availableColors.map((color, colorIdx) => (
+                              <SelectItem key={`${color.name}-${colorIdx}`} value={color.name}>
                                 <div className="flex items-center gap-1.5">
                                   <span
                                     className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 shadow-2xs"
-                                    style={getColorPreviewStyle(c)}
+                                    style={getColorPreviewStyle(color)}
                                   />
-                                  <span className="truncate">{c.name}</span>
-                                  {c.isCombined && (
+                                  <span className="truncate">{color.name}</span>
+                                  {color.isCombined && (
                                     <span className="text-[9px] text-muted-foreground font-normal ml-0.5">
                                       (Combinado)
                                     </span>
