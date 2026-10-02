@@ -185,13 +185,25 @@ function adaptProduct(p: ApiProduct): Product {
   }));
 
   const imageDetails: ProductImageItem[] = p.imageDetails?.length
-    ? p.imageDetails.map((img) => ({
-        id: img.id,
-        url: img.url,
-        order: img.order,
-        colorHex: img.colorHex ?? undefined,
-        colorName: img.colorName ?? undefined,
-      }))
+    ? p.imageDetails.map((img) => {
+        const matched = colors.find(
+          (c) =>
+            (img.colorName && c.name.toLowerCase() === img.colorName.toLowerCase()) ||
+            (img.colorHex &&
+              ((c.primaryHex && c.primaryHex.toLowerCase() === img.colorHex.toLowerCase()) ||
+                (c.hex && c.hex.toLowerCase() === img.colorHex.toLowerCase())))
+        );
+        return {
+          id: img.id,
+          url: img.url,
+          order: img.order,
+          colorHex: img.colorHex ?? (matched?.primaryHex || undefined),
+          colorName: img.colorName ?? (matched?.name || undefined),
+          primaryHex: matched?.primaryHex ?? img.colorHex ?? undefined,
+          secondaryHex: matched?.secondaryHex ?? undefined,
+          isCombined: matched?.isCombined ?? undefined,
+        };
+      })
     : p.images.map((url, idx) => ({
         url,
         order: idx,

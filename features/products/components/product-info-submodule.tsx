@@ -191,7 +191,14 @@ export function ProductInfoSubmodule({
     }
   };
 
-  const handleUpdateImageColor = (index: number, colorHex: string | null, colorName: string | null) => {
+  const handleUpdateImageColor = (
+    index: number,
+    colorHex: string | null,
+    colorName: string | null,
+    primaryHex?: string | null,
+    secondaryHex?: string | null,
+    isCombined?: boolean | null
+  ) => {
     if (setImageItems) {
       setImageItems((prev) => {
         const copy = [...prev];
@@ -200,6 +207,9 @@ export function ProductInfoSubmodule({
             ...copy[index],
             colorHex,
             colorName,
+            primaryHex: primaryHex ?? colorHex,
+            secondaryHex: secondaryHex ?? null,
+            isCombined: isCombined ?? false,
           };
         }
         return copy;
@@ -714,6 +724,23 @@ export function ProductInfoSubmodule({
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
                 {displayImages.map((imgItem, idx) => {
                   const isCover = idx === 0;
+                  const matchedColor = availableColors.find(
+                    (c) =>
+                      (imgItem.colorName && c.name.toLowerCase() === imgItem.colorName.toLowerCase()) ||
+                      (imgItem.colorHex &&
+                        ((c.primaryHex && c.primaryHex.toLowerCase() === imgItem.colorHex.toLowerCase()) ||
+                          (c.hex && c.hex.toLowerCase() === imgItem.colorHex.toLowerCase())))
+                  );
+
+                  const activeColorInfo = matchedColor || {
+                    name: imgItem.colorName || undefined,
+                    primaryHex: imgItem.primaryHex || imgItem.colorHex || undefined,
+                    secondaryHex: imgItem.secondaryHex || undefined,
+                    isCombined: imgItem.isCombined ?? false,
+                  };
+
+                  const hasColor = Boolean(activeColorInfo.name || activeColorInfo.primaryHex);
+
                   return (
                     <div
                       key={imgItem.url + idx}
@@ -732,6 +759,20 @@ export function ProductInfoSubmodule({
                         {isCover && (
                           <span className="absolute top-1.5 left-1.5 bg-[#555829] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-xs flex items-center gap-0.5 shadow-xs z-10">
                             <Check className="h-2.5 w-2.5" /> Portada
+                          </span>
+                        )}
+
+                        {/* Badge Flotante de Color Asociado */}
+                        {hasColor && (
+                          <span
+                            className="absolute top-1.5 right-1.5 bg-white/95 backdrop-blur-xs border border-black/10 rounded-full py-0.5 px-2 flex items-center gap-1.5 shadow-xs z-10 text-[9px] font-semibold text-[#34351f] max-w-[80%]"
+                            title={`Color: ${activeColorInfo.name || "Asignado"}`}
+                          >
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                              style={getColorPreviewStyle(activeColorInfo)}
+                            />
+                            <span className="truncate">{activeColorInfo.name}</span>
                           </span>
                         )}
 
@@ -763,18 +804,23 @@ export function ProductInfoSubmodule({
                       </div>
 
                       {/* Selector de color asignado a la fotografía */}
-                      <div className="p-2 border-t border-[#FAF9F5] bg-[#FAF9F5]/40 flex flex-col gap-1">
+                      <div className="p-2 border-t border-[#FAF9F5] bg-[#FAF9F5]/40 flex flex-col gap-1.5">
                         <div className="flex items-center justify-between text-[10px] font-medium text-[#7A7A6E]">
                           <span>Color:</span>
-                          {imgItem.colorHex ? (
-                            <span className="flex items-center gap-1">
+                          {hasColor ? (
+                            <span className="flex items-center gap-1.5">
                               <span
-                                className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 inline-block"
-                                style={{ backgroundColor: imgItem.colorHex }}
+                                className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 inline-block shadow-2xs"
+                                style={getColorPreviewStyle(activeColorInfo)}
                               />
-                              <span className="font-semibold text-[#34351f] truncate max-w-[80px]">
-                                {imgItem.colorName || imgItem.colorHex}
+                              <span className="font-semibold text-[#34351f] truncate max-w-[85px]">
+                                {activeColorInfo.name || activeColorInfo.primaryHex}
                               </span>
+                              {activeColorInfo.isCombined && (
+                                <span className="text-[8px] bg-[#FAF9F5] border border-[#EBE9DF] text-[#555829] px-1 rounded font-normal">
+                                  Comb.
+                                </span>
+                              )}
                             </span>
                           ) : (
                             <span className="text-muted-foreground italic">General</span>
@@ -782,41 +828,48 @@ export function ProductInfoSubmodule({
                         </div>
 
                         <Select
-                          value={imgItem.colorHex || "__none__"}
+                          value={activeColorInfo.name || "__none__"}
                           onValueChange={(val) => {
                             if (val === "__none__") {
-                              handleUpdateImageColor(idx, null, null);
+                              handleUpdateImageColor(idx, null, null, null, null, false);
                             } else {
                               const match = availableColors.find(
-                                (c) => (c.primaryHex || c.hex || "").toLowerCase() === val.toLowerCase()
+                                (c) => c.name.toLowerCase() === val.toLowerCase()
                               );
-                              handleUpdateImageColor(
-                                idx,
-                                match ? (match.primaryHex || match.hex || null) : val,
-                                match ? match.name : val
-                              );
+                              if (match) {
+                                handleUpdateImageColor(
+                                  idx,
+                                  match.primaryHex || match.hex || null,
+                                  match.name,
+                                  match.primaryHex,
+                                  match.secondaryHex || null,
+                                  Boolean(match.isCombined)
+                                );
+                              }
                             }
                           }}
                         >
                           <SelectTrigger className="h-7 text-[11px] bg-white border-[#EBE9DF] focus:ring-[#555829]">
-                            <SelectValue placeholder="Sin color" />
+                            <SelectValue placeholder="Sin color específico" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="__none__">Sin color específico</SelectItem>
-                            {availableColors.map((c) => {
-                              const hexVal = c.primaryHex || c.hex || "";
-                              return (
-                                <SelectItem key={c.name} value={hexVal}>
-                                  <div className="flex items-center gap-1.5">
-                                    <span
-                                      className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0"
-                                      style={getColorPreviewStyle(c)}
-                                    />
-                                    <span className="truncate">{c.name}</span>
-                                  </div>
-                                </SelectItem>
-                              );
-                            })}
+                            <SelectItem value="__none__">Sin color específico (General)</SelectItem>
+                            {availableColors.map((c) => (
+                              <SelectItem key={c.name} value={c.name}>
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                                    style={getColorPreviewStyle(c)}
+                                  />
+                                  <span className="truncate">{c.name}</span>
+                                  {c.isCombined && (
+                                    <span className="text-[9px] text-muted-foreground font-normal ml-0.5">
+                                      (Combinado)
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

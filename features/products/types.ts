@@ -18,6 +18,9 @@ export interface ProductImageItem {
   order?: number;
   colorHex?: string | null;
   colorName?: string | null;
+  primaryHex?: string | null;
+  secondaryHex?: string | null;
+  isCombined?: boolean | null;
 }
 
 export interface ProductVariant {
