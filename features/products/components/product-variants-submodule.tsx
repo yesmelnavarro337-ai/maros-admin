@@ -24,6 +24,7 @@ import {
 import { SizesColorsEditor } from "./sizes-colors-editor";
 import type { ProductVariant, ProductColor } from "../types";
 import { generateUniqueSku } from "../utils/sku-generator";
+import { getColorPreviewStyle } from "../utils/color-helper";
 
 interface ProductVariantsSubmoduleProps {
   sizes: string[];
@@ -106,7 +107,7 @@ export function ProductVariantsSubmodule({
               Opciones de Tallas y Colores
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              Define los atributos para generar la matriz de combinaciones del producto
+              Define los atributos simples o combinados para generar la matriz de combinaciones del producto
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5">
@@ -160,14 +161,20 @@ export function ProductVariantsSubmodule({
               </div>
 
               <Select value={colorFilter} onValueChange={setColorFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs bg-white border-[#EBE9DF]">
+                <SelectTrigger className="w-[150px] h-8 text-xs bg-white border-[#EBE9DF]">
                   <SelectValue placeholder="Color" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos colores</SelectItem>
                   {colors.map((c) => (
                     <SelectItem key={c.name} value={c.name}>
-                      {c.name}
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full border border-black/10 shrink-0"
+                          style={getColorPreviewStyle(c)}
+                        />
+                        <span className="truncate">{c.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -193,7 +200,7 @@ export function ProductVariantsSubmodule({
               <Table>
                 <TableHeader className="bg-[#FAF9F5]">
                   <TableRow className="border-[#EBE9DF]">
-                    <TableHead className="w-[60px] text-xs font-semibold text-[#34351f]">Color</TableHead>
+                    <TableHead className="w-[140px] text-xs font-semibold text-[#34351f]">Color</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">Talla</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">Categoría / tipo</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">SKU</TableHead>
@@ -226,10 +233,21 @@ export function ProductVariantsSubmodule({
                           <TableCell className="py-2">
                             <div className="flex items-center gap-2">
                               <span
-                                className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0"
-                                style={{ backgroundColor: v.colorHex }}
+                                className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0 shadow-2xs"
+                                style={getColorPreviewStyle({
+                                  primaryHex: v.primaryHex || v.colorHex,
+                                  secondaryHex: v.secondaryHex,
+                                  isCombined: v.isCombined,
+                                })}
                               />
-                              <span className="text-xs text-[#34351f] truncate">{v.colorName}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs text-[#34351f] truncate font-medium">{v.colorName}</span>
+                                {v.isCombined && (
+                                  <span className="text-[9px] text-[#555829] font-normal">
+                                    Combinado
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </TableCell>
 
@@ -378,15 +396,30 @@ export function ProductVariantsSubmodule({
                   )}
                   <span
                     className="absolute top-2 right-2 h-5 w-5 rounded-full border border-white shadow-xs"
-                    style={{ backgroundColor: activeSelectedVariant.colorHex }}
+                    style={getColorPreviewStyle({
+                      primaryHex: activeSelectedVariant.primaryHex || activeSelectedVariant.colorHex,
+                      secondaryHex: activeSelectedVariant.secondaryHex,
+                      isCombined: activeSelectedVariant.isCombined,
+                    })}
+                    title={activeSelectedVariant.colorName}
                   />
                 </div>
 
                 <div className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#34351f]">
-                      Color: {activeSelectedVariant.colorName}
-                    </span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span
+                        className="h-3 w-3 rounded-full border border-black/10 shrink-0 shadow-2xs"
+                        style={getColorPreviewStyle({
+                          primaryHex: activeSelectedVariant.primaryHex || activeSelectedVariant.colorHex,
+                          secondaryHex: activeSelectedVariant.secondaryHex,
+                          isCombined: activeSelectedVariant.isCombined,
+                        })}
+                      />
+                      <span className="text-xs font-bold text-[#34351f] truncate">
+                        Color: {activeSelectedVariant.colorName}
+                      </span>
+                    </div>
                     <Badge className="bg-[#FAF9F5] text-[#34351f] border border-[#EBE9DF] text-[10px]">
                       Talla {activeSelectedVariant.size}
                     </Badge>

@@ -1,10 +1,21 @@
 import { z } from "zod";
 
-const productVariantSchema = z.object({
+export const productColorSchema = z.object({
+  name: z.string().min(1, "El nombre del color es requerido"),
+  primaryHex: z.string().min(1, "El color principal es requerido"),
+  secondaryHex: z.string().optional().nullable(),
+  isCombined: z.boolean().default(false),
+  hex: z.string().optional(),
+});
+
+export const productVariantSchema = z.object({
   id: z.string().optional().nullable(),
   size: z.string().min(1, "La talla es requerida"),
   colorName: z.string().min(1, "El color es requerido"),
-  colorHex: z.string().min(1, "El color es requerido"),
+  colorHex: z.string().optional().nullable(),
+  primaryHex: z.string().min(1, "El color principal es requerido").optional(),
+  secondaryHex: z.string().optional().nullable(),
+  isCombined: z.boolean().optional().default(false),
   sku: z.string().min(1, "El SKU es requerido"),
   stock: z.coerce.number().int().min(0, "El stock no puede ser negativo"),
   price: z.coerce.number().positive("El precio de variante debe ser mayor a 0").optional().nullable(),

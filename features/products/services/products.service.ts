@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api/client-fetcher";
 import { revalidateWeb } from "@/lib/api/revalidate-web";
 import type {
   Product,
+  ProductColor,
   ProductFilters,
   ProductStatus,
   ProductDisplayStatus,
@@ -25,6 +26,9 @@ interface ApiProductVariant {
   size: string;
   colorName: string;
   colorHex: string;
+  primaryHex?: string | null;
+  secondaryHex?: string | null;
+  isCombined?: boolean | null;
   sku: string;
   stock: number;
   price?: number | null;
@@ -94,10 +98,53 @@ function statusFromApi(status: string): ProductStatus {
   ) ?? "activo";
 }
 
+function parseColorInfo(v: ApiProductVariant): {
+  primaryHex: string;
+  secondaryHex?: string | null;
+  isCombined: boolean;
+} {
+  if (v.isCombined != null) {
+    return {
+      primaryHex: v.primaryHex || v.colorHex || "#6B6832",
+      secondaryHex: v.secondaryHex || null,
+      isCombined: Boolean(v.isCombined),
+    };
+  }
+
+  if (v.colorHex && v.colorHex.includes("|")) {
+    const parts = v.colorHex.split("|");
+    return {
+      primaryHex: parts[0] || "#6B6832",
+      secondaryHex: parts[1] || null,
+      isCombined: true,
+    };
+  }
+
+  return {
+    primaryHex: v.primaryHex || v.colorHex || "#6B6832",
+    secondaryHex: v.secondaryHex || null,
+    isCombined: false,
+  };
+}
+
 function adaptProduct(p: ApiProduct): Product {
   const sizes = Array.from(new Set(p.variants.map((v) => v.size)));
-  const colors = Array.from(
-    new Map(p.variants.map((v) => [v.colorName, { name: v.colorName, hex: v.colorHex }])).values()
+  const colors: ProductColor[] = Array.from(
+    new Map(
+      p.variants.map((v) => {
+        const info = parseColorInfo(v);
+        return [
+          v.colorName,
+          {
+            name: v.colorName,
+            hex: info.primaryHex,
+            primaryHex: info.primaryHex,
+            secondaryHex: info.secondaryHex,
+            isCombined: info.isCombined,
+          },
+        ];
+      })
+    ).values()
   );
 
   const totalStock = p.totalStock ?? p.variants.reduce((sum, v) => sum + v.stock, 0);
@@ -171,16 +218,22 @@ function adaptProduct(p: ApiProduct): Product {
     imageDetails,
     sizes,
     colors,
-    variants: p.variants.map((v) => ({
-      id: v.id,
-      size: v.size,
-      colorName: v.colorName,
-      colorHex: v.colorHex,
-      sku: v.sku,
-      stock: v.stock,
-      price: v.price ?? undefined,
-      image: v.imageUrl ?? undefined,
-    })),
+    variants: p.variants.map((v) => {
+      const info = parseColorInfo(v);
+      return {
+        id: v.id,
+        size: v.size,
+        colorName: v.colorName,
+        colorHex: info.primaryHex,
+        primaryHex: info.primaryHex,
+        secondaryHex: info.secondaryHex,
+        isCombined: info.isCombined,
+        sku: v.sku,
+        stock: v.stock,
+        price: v.price ?? undefined,
+        image: v.imageUrl ?? undefined,
+      };
+    }),
     collectionIds: p.collectionIds,
     featuredHome: p.featuredHome,
     allowCustomization: p.allowCustomization,
@@ -214,6 +267,9 @@ export interface SaveProductPayload {
     size: string;
     colorName: string;
     colorHex: string;
+    primaryHex?: string;
+    secondaryHex?: string | null;
+    isCombined?: boolean;
     sku: string;
     stock: number;
     price?: number | null;
@@ -263,7 +319,10 @@ function buildApiPayload(data: SaveProductPayload) {
       id: v.id && isValidGuid(v.id) ? v.id : null,
       size: v.size,
       colorName: v.colorName,
-      colorHex: v.colorHex,
+      colorHex: v.primaryHex || v.colorHex || "#000000",
+      primaryHex: v.primaryHex || v.colorHex || "#000000",
+      secondaryHex: v.secondaryHex ?? null,
+      isCombined: Boolean(v.isCombined),
       sku: v.sku,
       stock: Number(v.stock),
       price: v.price != null && !isNaN(Number(v.price)) ? Number(v.price) : null,
@@ -354,9 +413,13 @@ export function toSavePayload(product: Product): SaveProductPayload {
     images: product.images,
     imageDetails: product.imageDetails,
     variants: product.variants.map((v) => ({
+      id: v.id,
       size: v.size,
       colorName: v.colorName,
       colorHex: v.colorHex,
+      primaryHex: v.primaryHex || v.colorHex,
+      secondaryHex: v.secondaryHex,
+      isCombined: v.isCombined,
       sku: v.sku,
       stock: v.stock,
       price: v.price,

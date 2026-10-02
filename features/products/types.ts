@@ -6,7 +6,10 @@ export type ProductVisibility = "publico" | "registrados" | "oculto";
 
 export interface ProductColor {
   name: string;
-  hex: string;
+  hex?: string;
+  primaryHex: string;
+  secondaryHex?: string | null;
+  isCombined?: boolean;
 }
 
 export interface ProductImageItem {
@@ -22,6 +25,9 @@ export interface ProductVariant {
   size: string;
   colorName: string;
   colorHex: string;
+  primaryHex?: string;
+  secondaryHex?: string | null;
+  isCombined?: boolean;
   sku: string;
   stock: number;
   image?: string;

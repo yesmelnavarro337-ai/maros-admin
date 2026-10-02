@@ -129,8 +129,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
   } = useVariantMatrix(
     initialData?.sizes ?? ["S", "M", "L"],
     initialData?.colors ?? [
-      { name: "Beige Satín", hex: "#E8D8C8" },
-      { name: "Verde Oliva", hex: "#555829" },
+      { name: "Beige Satín", hex: "#E8D8C8", primaryHex: "#E8D8C8", isCombined: false },
+      { name: "Verde Oliva", hex: "#555829", primaryHex: "#555829", isCombined: false },
     ],
     initialData?.variants ?? []
   );
@@ -233,7 +233,10 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             id: v.id && isGuid(v.id) && initialVariantIds.has(v.id) ? v.id : null,
             size: v.size,
             colorName: v.colorName,
-            colorHex: v.colorHex,
+            colorHex: v.primaryHex || v.colorHex,
+            primaryHex: v.primaryHex || v.colorHex,
+            secondaryHex: v.secondaryHex ?? null,
+            isCombined: Boolean(v.isCombined),
             sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName),
             stock: Number(v.stock),
             price: v.price != null && !isNaN(Number(v.price)) ? Number(v.price) : null,

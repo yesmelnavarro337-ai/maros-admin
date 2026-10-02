@@ -38,6 +38,7 @@ import { uploadImage } from "@/lib/api/media.service";
 import type { Category } from "@/features/categories/types";
 import type { Collection } from "@/features/collections/types";
 import type { CategoryPriceEntry, ProductColor, ProductImageItem, ProductStatus } from "../types";
+import { getColorPreviewStyle } from "../utils/color-helper";
 import { generateUniqueSku } from "../utils/sku-generator";
 
 interface ProductInfoSubmoduleProps {
@@ -787,11 +788,11 @@ export function ProductInfoSubmodule({
                               handleUpdateImageColor(idx, null, null);
                             } else {
                               const match = availableColors.find(
-                                (c) => c.hex.toLowerCase() === val.toLowerCase()
+                                (c) => (c.primaryHex || c.hex || "").toLowerCase() === val.toLowerCase()
                               );
                               handleUpdateImageColor(
                                 idx,
-                                match ? match.hex : val,
+                                match ? (match.primaryHex || match.hex || null) : val,
                                 match ? match.name : val
                               );
                             }
@@ -802,17 +803,20 @@ export function ProductInfoSubmodule({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">Sin color específico</SelectItem>
-                            {availableColors.map((c) => (
-                              <SelectItem key={c.hex} value={c.hex}>
-                                <div className="flex items-center gap-1.5">
-                                  <span
-                                    className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0"
-                                    style={{ backgroundColor: c.hex }}
-                                  />
-                                  <span className="truncate">{c.name}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
+                            {availableColors.map((c) => {
+                              const hexVal = c.primaryHex || c.hex || "";
+                              return (
+                                <SelectItem key={c.name} value={hexVal}>
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0"
+                                      style={getColorPreviewStyle(c)}
+                                    />
+                                    <span className="truncate">{c.name}</span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>

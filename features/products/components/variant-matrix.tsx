@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import type { ProductColor, ProductVariant } from "../types";
 import { uploadImage } from "@/lib/api/media.service";
 import { toast } from "@/lib/toast";
+import { getColorPreviewStyle } from "../utils/color-helper";
 
 interface VariantMatrixProps {
   sizes: string[];
@@ -25,14 +26,14 @@ export function VariantMatrix({ sizes, colors, variants, onUpdateVariant }: Vari
   const findVariant = (size: string, colorName: string) =>
     variants.find((v) => v.size === size && v.colorName === colorName);
 
-async function handleImageUpload(variantId: string, file: File) {
-  try {
-    const result = await uploadImage(file, "products/variants");
-    onUpdateVariant(variantId, { image: result.url });
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : "No se pudo subir la imagen.");
+  async function handleImageUpload(variantId: string, file: File) {
+    try {
+      const result = await uploadImage(file, "products/variants");
+      onUpdateVariant(variantId, { image: result.url });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo subir la imagen.");
+    }
   }
-}
 
   return (
     <div className="overflow-x-auto">
@@ -44,10 +45,10 @@ async function handleImageUpload(variantId: string, file: File) {
               <th key={color.name} className="text-sm text-muted-foreground pb-2 px-2">
                 <div className="flex items-center gap-1.5 justify-center">
                   <span
-                    className="h-3 w-3 rounded-full border border-border"
-                    style={{ backgroundColor: color.hex }}
+                    className="h-3.5 w-3.5 rounded-full border border-border shrink-0 shadow-2xs"
+                    style={getColorPreviewStyle(color)}
                   />
-                  {color.name}
+                  <span>{color.name}</span>
                 </div>
               </th>
             ))}
