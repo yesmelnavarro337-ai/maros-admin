@@ -1,3 +1,5 @@
+import type { GalleryImageItem } from "@/components/shared/image-gallery-uploader";
+
 export type SeasonStatus = "borrador" | "programada" | "activa" | "finalizada";
 
 export interface SeasonColors {
@@ -5,6 +7,16 @@ export interface SeasonColors {
   accent: string;
   background: string;
 }
+
+export interface SeasonImage {
+  id: string;
+  imageUrl: string;
+  order: number;
+  isPrimary: boolean;
+}
+
+/** Item editable del selector multi-imagen; `id` ausente = imagen nueva. */
+export type SeasonImageInput = GalleryImageItem;
 
 export interface Season {
   id: string;
@@ -24,6 +36,7 @@ export interface Season {
   ctaText: string;
   ctaLink: string;
   featuredProductIds: string[];
+  images: SeasonImage[];
   isActive?: boolean;
   productsCount?: number;
   isVisibleStore?: boolean;

@@ -32,6 +32,7 @@ interface ApiHomeSectionContent {
   ctaLink?: string | null;
   mainImageUrl?: string | null;
   mainImageAlt?: string | null;
+  cardImageUrl?: string | null;
   secondaryImages?: ApiHomeSectionImage[] | null;
   tags?: ApiHomeSectionTag[] | null;
 }
@@ -47,6 +48,7 @@ function adaptSection(raw: ApiHomeSectionContent): HomeSectionDraft {
     ctaLink: raw.ctaLink ?? "",
     mainImageUrl: raw.mainImageUrl ?? "",
     mainImageAlt: raw.mainImageAlt ?? "",
+    cardImageUrl: raw.cardImageUrl ?? "",
     secondaryImages: (raw.secondaryImages ?? []).map((img) => ({
       url: img.url ?? "",
       alt: img.alt ?? "",
@@ -96,6 +98,7 @@ export async function updateHomeSectionContent(
         ctaLink: draft.ctaLink || null,
         mainImageUrl: draft.mainImageUrl || null,
         mainImageAlt: draft.mainImageAlt || null,
+        cardImageUrl: draft.cardImageUrl || null,
         secondaryImages: draft.secondaryImages
           .filter((img) => img.url.trim())
           .map((img) => ({ url: img.url.trim(), alt: img.alt.trim() || null })),

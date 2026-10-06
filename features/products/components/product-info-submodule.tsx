@@ -16,6 +16,7 @@ import {
   Sparkles,
   ShoppingBag,
   Info,
+  Lock,
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ import type { Collection } from "@/features/collections/types";
 import type { CategoryPriceEntry, ProductColor, ProductImageItem, ProductStatus } from "../types";
 import { getColorPreviewStyle } from "../utils/color-helper";
 import { generateUniqueSku } from "../utils/sku-generator";
+import { calculateAutomaticBasePrice, calculatePriceDetails, isPromoActive } from "../utils/price-calculator";
 
 interface ProductInfoSubmoduleProps {
   name: string;
@@ -79,6 +81,7 @@ interface ProductInfoSubmoduleProps {
   collections: Collection[];
   loadingCategories?: boolean;
   loadingCollections?: boolean;
+  styles?: string[];
 }
 
 export function ProductInfoSubmodule({
@@ -119,6 +122,7 @@ export function ProductInfoSubmodule({
   loadingCollections,
   categoryPrices = [],
   setCategoryPrices,
+  styles = [],
 }: ProductInfoSubmoduleProps) {
   const [newTagInput, setNewTagInput] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -519,67 +523,122 @@ export function ProductInfoSubmodule({
               />
             </div>
 
-            {/* Grid 3 columnas: Precio, Estado, Stock */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Precio Base */}
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-price" className="text-xs font-semibold text-[#34351f]">
-                  Precio base COP ($) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="prod-price"
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={basePrice || ""}
-                  onChange={(e) => setBasePrice(parseFloat(e.target.value) || 0)}
-                  placeholder={
-                    primaryDefaultPrice
-                      ? `Precio sugerido: $${primaryDefaultPrice.toLocaleString("es-CO")} COP`
-                      : "Ej. 129000"
-                  }
-                  className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
-                />
-                {primaryDefaultPrice && (!basePrice || basePrice === 0) ? (
-                  <p className="text-[11px] text-muted-foreground">
-                    Sugerido: ${primaryDefaultPrice.toLocaleString("es-CO")} COP
-                  </p>
-                ) : null}
-              </div>
+            {/* Sección de Asignación Automática de Precios */}
+            {(() => {
+              const autoCalculatedPrice = calculateAutomaticBasePrice(
+                selectedCategories.map((c) => c.name),
+                styles
+              );
+              const activeBase = basePrice > 0 ? basePrice : autoCalculatedPrice;
+              const details = calculatePriceDetails(activeBase);
 
-              {/* Estado */}
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-status" className="text-xs font-semibold text-[#34351f]">
-                  Estado
-                </Label>
-                <Select value={status} onValueChange={(val: ProductStatus) => setStatus(val)}>
-                  <SelectTrigger id="prod-status" className="bg-white border-[#EBE9DF] focus:ring-[#555829]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="activo">Activo</SelectItem>
-                    <SelectItem value="borrador">Borrador</SelectItem>
-                    <SelectItem value="archivado">Archivado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              return (
+                <div className="space-y-4 p-4 rounded-xl border border-[#555829]/20 bg-[#FAF9F5]/70">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#EBE9DF] pb-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#34351f] flex items-center gap-1.5">
+                        <Sparkles className="h-4 w-4 text-[#555829]" />
+                        Sistema de Precios Automáticos (Maro's Pijamas)
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Basado en reglas fijas de Categoría, Estilo y Promoción Activa
+                      </p>
+                    </div>
+                    <Badge className="bg-[#555829] text-white text-[10px] self-start sm:self-auto font-medium">
+                      Regla Automática Fija
+                    </Badge>
+                  </div>
 
-              {/* Stock */}
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-stock" className="text-xs font-semibold text-[#34351f]">
-                  Stock disponible
-                </Label>
-                <Input
-                  id="prod-stock"
-                  type="number"
-                  min={0}
-                  value={totalStock || 0}
-                  onChange={(e) => setTotalStock(parseInt(e.target.value, 10) || 0)}
-                  placeholder="10"
-                  className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
-                />
-              </div>
-            </div>
+                  {/* Grid 3 columnas: Precio, Estado, Stock */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    {/* Precio Base (Inmutable / Auto-calculado) */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="prod-price" className="text-xs font-bold text-[#34351f] flex items-center gap-1">
+                          <Lock className="h-3 w-3 text-[#555829]" /> Precio base COP ($)
+                        </Label>
+                        <Badge variant="outline" className="text-[9px] bg-amber-50 text-amber-800 border-amber-200">
+                          Bloqueado / Inmutable
+                        </Badge>
+                      </div>
+                      <Input
+                        id="prod-price"
+                        type="number"
+                        min={0}
+                        step={1000}
+                        value={activeBase || ""}
+                        readOnly
+                        disabled
+                        placeholder={`$${autoCalculatedPrice.toLocaleString("es-CO")}`}
+                        className="bg-[#FAF9F5] border-[#EBE9DF] font-extrabold text-sm text-[#555829] cursor-not-allowed"
+                        title="El precio base se calcula y fija automáticamente según la regla del Estilo seleccionado."
+                      />
+                      <p className="text-[10px] text-[#555829] font-medium flex items-center gap-1">
+                        <span>Automático por estilo: ${autoCalculatedPrice.toLocaleString("es-CO")} COP</span>
+                      </p>
+                    </div>
+
+                    {/* Estado */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prod-status" className="text-xs font-semibold text-[#34351f]">
+                        Estado
+                      </Label>
+                      <Select value={status} onValueChange={(val: ProductStatus) => setStatus(val)}>
+                        <SelectTrigger id="prod-status" className="bg-white border-[#EBE9DF] focus:ring-[#555829]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="activo">Activo</SelectItem>
+                          <SelectItem value="borrador">Borrador</SelectItem>
+                          <SelectItem value="archivado">Archivado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Stock */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prod-stock" className="text-xs font-semibold text-[#34351f]">
+                        Stock disponible
+                      </Label>
+                      <Input
+                        id="prod-stock"
+                        type="number"
+                        min={0}
+                        value={totalStock || 0}
+                        onChange={(e) => setTotalStock(parseInt(e.target.value, 10) || 0)}
+                        placeholder="10"
+                        className="bg-white border-[#EBE9DF] focus-visible:ring-[#555829]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Banner de Promoción del 5% si la fecha está activa */}
+                  {details.promoActive && (
+                    <div className="p-3 rounded-lg bg-[#555829]/10 border border-[#555829]/25 text-xs text-[#34351f] space-y-1">
+                      <div className="flex items-center justify-between font-semibold">
+                        <span className="flex items-center gap-1.5 text-[#555829] font-bold">
+                          🏷️ Descuento del 5% Activo (04 Oct - 09 Nov)
+                        </span>
+                        <span className="text-emerald-700 font-extrabold text-sm">
+                          ${details.finalPrice.toLocaleString("es-CO")} COP (Venta)
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Precio base: ${activeBase.toLocaleString("es-CO")} COP | Descuento automático aplicado: -${details.discountAmount.toLocaleString("es-CO")} COP
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Info de Recargo por Talla */}
+                  <div className="flex items-start gap-2 pt-1">
+                    <Info className="h-4 w-4 text-[#555829] shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <span className="font-semibold text-[#34351f]">Regla de Variantes por Talla:</span> Las tallas estándar (XS, S, M, L) conservan el precio base (${activeBase.toLocaleString("es-CO")} COP). Las tallas mayores a L (XL, 2XL, 3XL, etc.) tienen un recargo automático de +$10.000 COP (${(activeBase + 10000).toLocaleString("es-CO")} COP).
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Peso kg */}
             <div className="space-y-1.5 sm:w-1/3">

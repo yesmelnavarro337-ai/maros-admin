@@ -14,7 +14,7 @@ export const HOME_SECTION_LABELS: Record<HomeSectionKey, string> = {
 
 export const HOME_SECTION_DESCRIPTIONS: Record<HomeSectionKey, string> = {
   personalize:
-    "Sección con la imagen del proceso de diseño y los 4 pasos del personalizador.",
+    "Dos imágenes independientes: el banner del carrusel del Home y la foto de la tarjeta de 4 pasos.",
   "featured-collection":
     "Textos e imágenes de la campaña. Los productos vienen de la colección activa; lo que dejes vacío usa el texto actual de la tienda.",
   "brand-promise":
@@ -49,6 +49,8 @@ export interface HomeSectionDraft {
   ctaLink: string;
   mainImageUrl: string;
   mainImageAlt: string;
+  /** Imagen de la tarjeta de 4 pasos; independiente del banner del hero. */
+  cardImageUrl: string;
   secondaryImages: HomeSectionImageDraft[];
   tags: HomeSectionTagDraft[];
 }
@@ -65,6 +67,7 @@ export function emptyHomeSectionDraft(): HomeSectionDraft {
     ctaLink: "",
     mainImageUrl: "",
     mainImageAlt: "",
+    cardImageUrl: "",
     secondaryImages: [],
     tags: [],
   };

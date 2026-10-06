@@ -33,6 +33,9 @@ interface ApiProductVariant {
   stock: number;
   price?: number | null;
   imageUrl?: string | null;
+  isAvailable?: boolean | null;
+  styleName?: string | null;
+  materialName?: string | null;
 }
 
 interface ApiProductImage {
@@ -76,6 +79,7 @@ interface ApiProduct {
   imageDetails?: ApiProductImage[] | null;
   variants: ApiProductVariant[];
   collectionIds: string[];
+  styleIds?: string[] | null;
   createdAt: string;
   sku?: string;
   totalStock?: number;
@@ -244,9 +248,20 @@ function adaptProduct(p: ApiProduct): Product {
         stock: v.stock,
         price: v.price ?? undefined,
         image: v.imageUrl ?? undefined,
+        styleName: v.styleName ?? null,
+        materialName: v.materialName ?? null,
+        isAvailable: v.isAvailable ?? true,
       };
     }),
     collectionIds: p.collectionIds,
+    styleIds: p.styleIds ?? [],
+    styles: [
+      ...new Set(
+        p.variants
+          .map((v) => v.styleName)
+          .filter((name): name is string => Boolean(name && name.trim()))
+      ),
+    ],
     featuredHome: p.featuredHome,
     allowCustomization: p.allowCustomization,
     deliveryTime: p.deliveryTime,
@@ -286,8 +301,12 @@ export interface SaveProductPayload {
     stock: number;
     price?: number | null;
     image?: string;
+    styleName?: string | null;
+    materialName?: string | null;
+    isAvailable?: boolean;
   }[];
   collectionIds: string[];
+  styleIds?: string[];
 }
 
 function isValidGuid(val?: string | null): boolean {
@@ -339,8 +358,12 @@ function buildApiPayload(data: SaveProductPayload) {
       stock: Number(v.stock),
       price: v.price != null && !isNaN(Number(v.price)) ? Number(v.price) : null,
       imageUrl: v.image ?? null,
+      styleName: v.styleName ?? null,
+      materialName: v.materialName ?? null,
+      isAvailable: v.isAvailable ?? true,
     })),
     collectionIds: data.collectionIds,
+    styleIds: (data.styleIds ?? []).filter(isValidGuid),
   };
 }
 
@@ -436,8 +459,12 @@ export function toSavePayload(product: Product): SaveProductPayload {
       stock: v.stock,
       price: v.price,
       image: v.image,
+      styleName: v.styleName ?? null,
+      materialName: v.materialName ?? null,
+      isAvailable: v.isAvailable ?? true,
     })),
     collectionIds: product.collectionIds,
+    styleIds: product.styleIds ?? [],
   };
 }
 

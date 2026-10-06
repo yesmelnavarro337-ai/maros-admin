@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Image as ImageIcon, Info, Sliders, Trash2 } from "lucide-react";
+import { ArrowLeft, Images, Info, Sliders, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,13 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SingleImageUploader } from "@/components/shared/single-image-uploader";
+import { ImageGalleryUploader } from "@/components/shared/image-gallery-uploader";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { getCollections } from "@/features/collections/services/collections.service";
 import { createSeason, updateSeason, deleteSeason } from "../services/seasons.service";
 import { toast } from "@/lib/toast";
 import type { Collection } from "@/features/collections/types";
-import type { Season, SeasonStatus, SeasonColors } from "../types";
+import type { Season, SeasonStatus, SeasonColors, SeasonImageInput } from "../types";
 
 interface SeasonFormProps {
   mode: "create" | "edit";
@@ -42,13 +42,22 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
     initialData?.heroSubtitle || initialData?.heroTitle || ""
   );
 
-  // Right Column States
-  const [bannerImage, setBannerImage] = useState<string | undefined>(
-    initialData?.bannerImage || initialData?.heroImage || initialData?.coverImageUrl
-  );
-  const [isVisibleStore, setIsVisibleStore] = useState(initialData?.isVisibleStore ?? true);
+// Right Column States
+const [isVisibleStore, setIsVisibleStore] = useState(initialData?.isVisibleStore ?? true);
   const [isFeaturedHome, setIsFeaturedHome] = useState(initialData?.isFeaturedHome ?? true);
   const [allowCustomization, setAllowCustomization] = useState(initialData?.allowCustomization ?? false);
+
+  const [images, setImages] = useState<SeasonImageInput[]>(
+    initialData?.images.map((image) => ({
+      id: image.id || undefined,
+      imageUrl: image.imageUrl,
+      isPrimary: image.isPrimary,
+    })) ?? []
+  );
+
+  // La galería es la única fuente de verdad; la portada también alimenta los
+  // campos legacy heroImage/bannerImage para los consumidores que aún los leen.
+  const coverImage = images.find((image) => image.isPrimary)?.imageUrl ?? images[0]?.imageUrl;
 
   const [colors] = useState<SeasonColors>(
     initialData?.colors ?? { primary: "#555A2B", accent: "#E6DBB8", background: "#FAF9F5" }
@@ -93,8 +102,8 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
       endDate,
       heroTitle: name,
       heroSubtitle: description,
-      bannerImage,
-      heroImage: bannerImage,
+      bannerImage: coverImage,
+      heroImage: coverImage,
       colors,
       ctaText: "Ver colección",
       ctaLink: "/colecciones",
@@ -103,6 +112,7 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
       isVisibleStore,
       isFeaturedHome,
       allowCustomization,
+      images,
     };
 
     try {
@@ -314,49 +324,23 @@ export function SeasonForm({ mode, initialData }: SeasonFormProps) {
 
         {/* Right Column (Media & Config - 1 col) */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Card: Imagen de Portada / Banner */}
+          {/* Card: Galería de imágenes */}
           <div className="bg-card border border-border/60 rounded-xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-border/40">
-              <ImageIcon className="h-4 w-4 text-[#555A2B]" />
+              <Images className="h-4 w-4 text-[#555A2B]" />
               <h2 className="font-serif text-lg font-semibold text-[#1C1917]">
-                Imagen de Portada
+                Imágenes de la temporada
               </h2>
             </div>
 
-            {bannerImage ? (
-              <div className="space-y-3">
-                <div className="aspect-[16/10] w-full rounded-lg overflow-hidden border border-border/60 bg-[#FAF9F5]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={bannerImage} alt="Portada" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <SingleImageUploader
-                      label=""
-                      value={bannerImage}
-                      onChange={setBannerImage}
-                      folder="seasons"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setBannerImage(undefined)}
-                    className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200 text-xs shrink-0"
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1" />
-                    Quitar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <SingleImageUploader
-                label="Cargar imagen promocional"
-                value={bannerImage}
-                onChange={setBannerImage}
-                folder="seasons"
-              />
-            )}
+            <ImageGalleryUploader
+              label="Galería"
+              value={images}
+              onChange={setImages}
+              folder="seasons"
+              maxItems={8}
+              hint="La portada es la primera diapositiva del hero; las demás se muestran en el orden de la lista."
+            />
           </div>
 
           {/* Card: Configuration Switches */}

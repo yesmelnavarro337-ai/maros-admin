@@ -178,7 +178,11 @@ export function HomeContentEditor() {
               )}
 
               <SingleImageUploader
-                label={key === "personalize" ? "Imagen del proceso" : "Imagen principal"}
+                label={
+                  key === "personalize"
+                    ? "Imagen para Header / Banner Principal (Carrusel)"
+                    : "Imagen principal"
+                }
                 value={drafts[key].mainImageUrl || undefined}
                 onChange={(img) => updateField(key, "mainImageUrl", img ?? "")}
                 folder="home"
@@ -192,6 +196,22 @@ export function HomeContentEditor() {
                   onChange={(e) => updateField(key, "mainImageAlt", e.target.value)}
                 />
               </div>
+
+              {key === "personalize" && (
+                <>
+                  <SingleImageUploader
+                    label="Imagen para Tarjeta Promocional (4 Pasos)"
+                    value={drafts[key].cardImageUrl || undefined}
+                    onChange={(img) => updateField(key, "cardImageUrl", img ?? "")}
+                    folder="home"
+                  />
+                  <p className="-mt-1 text-[11px] text-muted-foreground">
+                    Esta es la foto de la tarjeta &quot;Personaliza tu pijama en 4
+                    pasos&quot;. Es independiente del banner del carrusel: puedes
+                    cambiarla sin tocar la imagen del hero.
+                  </p>
+                </>
+              )}
 
               {key === "featured-collection" && (
                 <>
@@ -215,79 +235,47 @@ export function HomeContentEditor() {
                   </div>
 
                   <div className="rounded-md border border-border p-4 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
+                    <div>
                       <p className="text-sm font-medium text-foreground">
-                        Imágenes de detalle
+                        Imágenes destacadas laterales
                       </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          updateField(key, "secondaryImages", [
-                            ...drafts[key].secondaryImages,
-                            { url: "", alt: "" },
-                          ])
-                        }
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1.5" />
-                        Agregar imagen
-                      </Button>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Son las dos fotos de la columna derecha de &quot;Colección
+                        destacada&quot; (visibles en pantallas grandes). Son fijas:
+                        no cambian al navegar entre colecciones.
+                      </p>
                     </div>
 
-                    {drafts[key].secondaryImages.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Sin imágenes configuradas. Se muestran las imágenes de respaldo.
-                      </p>
-                    )}
-
-                    {drafts[key].secondaryImages.map((image, index) => (
-                      <div key={index} className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/20 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            Imagen {index + 1}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateField(
-                                key,
-                                "secondaryImages",
-                                drafts[key].secondaryImages.filter((_, i) => i !== index)
-                              )
-                            }
-                            className="text-destructive hover:underline"
-                            aria-label={`Quitar imagen ${index + 1}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        <SingleImageUploader
-                          label=""
-                          value={image.url || undefined}
-                          onChange={(url) => {
-                            const next = [...drafts[key].secondaryImages];
-                            next[index] = { ...next[index], url: url ?? "" };
-                            updateField(key, "secondaryImages", next);
-                          }}
-                          aspect="square"
-                          folder="home"
-                        />
-
-                        <div>
-                          <Label className="mb-1.5 block">Texto alternativo</Label>
-                          <Input
-                            value={image.alt}
-                            onChange={(e) => {
-                              const next = [...drafts[key].secondaryImages];
-                              next[index] = { ...next[index], alt: e.target.value };
-                              updateField(key, "secondaryImages", next);
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                    <div className="grid gap-5 md:grid-cols-2">
+                      {[0, 1].map((index) => {
+                        const image = drafts[key].secondaryImages[index] ?? { url: "", alt: "" };
+                        const setSlot = (patch: Partial<{ url: string; alt: string }>) => {
+                          const next = [...drafts[key].secondaryImages];
+                          while (next.length <= index) next.push({ url: "", alt: "" });
+                          next[index] = { ...next[index], ...patch };
+                          updateField(key, "secondaryImages", next);
+                        };
+                        return (
+                          <div key={index} className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/20 p-3">
+                            <SingleImageUploader
+                              label={`Imagen Destacada Lateral ${index + 1}`}
+                              value={image.url || undefined}
+                              onChange={(url) => setSlot({ url: url ?? "" })}
+                              aspect="square"
+                              folder="home"
+                            />
+                            <div>
+                              <Label className="mb-1.5 block">Texto alternativo</Label>
+                              <Input
+                                value={image.alt}
+                                onChange={(e) => setSlot({ alt: e.target.value })}
+                                placeholder={`Describe la imagen lateral ${index + 1}`}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
               )}

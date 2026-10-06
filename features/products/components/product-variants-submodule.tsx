@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Trash2, Pencil, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, Sparkles, Image as ImageIcon, PackageCheck, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -23,42 +25,75 @@ import {
 } from "@/components/ui/table";
 import { SizesColorsEditor } from "./sizes-colors-editor";
 import type { ProductVariant, ProductColor } from "../types";
+import { DEFAULT_VARIANT_STOCK } from "../types";
 import { generateUniqueSku } from "../utils/sku-generator";
 import { getColorPreviewStyle } from "../utils/color-helper";
+import { getSizeLineMode, isLargeSize } from "../utils/price-calculator";
+import { getAvailableSizesByStyle } from "../utils/size-helpers";
+import { toast } from "@/lib/toast";
 
 interface ProductVariantsSubmoduleProps {
   sizes: string[];
   colors: ProductColor[];
+  styles?: string[];
+  materials?: string[];
   variants: ProductVariant[];
   basePrice: number;
   selectedCategoryNames?: string[];
+  /** Catálogo de tallas permitido para el estilo seleccionado. */
+  availableSizes?: readonly string[];
   onAddSize: (size: string) => void;
   onRemoveSize: (size: string) => void;
   onAddColor: (color: ProductColor) => void;
   onRemoveColor: (name: string) => void;
+  onAddStyle?: (style: string) => void;
+  onRemoveStyle?: (style: string) => void;
+  onAddMaterial?: (material: string) => void;
+  onRemoveMaterial?: (material: string) => void;
   onUpdateVariant: (id: string, patch: Partial<ProductVariant>) => void;
+  onBulkUpdateStock?: (stock: number, variantIds?: string[]) => void;
+  onBulkUpdateAvailability?: (isAvailable: boolean, variantIds?: string[]) => void;
   onRegenerateAllSkus?: () => void;
 }
 
 export function ProductVariantsSubmodule({
   sizes,
   colors,
+  styles = [],
+  materials = [],
   variants,
   basePrice,
   selectedCategoryNames = [],
+  availableSizes,
   onAddSize,
   onRemoveSize,
   onAddColor,
   onRemoveColor,
+  onAddStyle,
+  onRemoveStyle,
+  onAddMaterial,
+  onRemoveMaterial,
   onUpdateVariant,
+  onBulkUpdateStock,
+  onBulkUpdateAvailability,
   onRegenerateAllSkus,
 }: ProductVariantsSubmoduleProps) {
   const [colorFilter, setColorFilter] = useState("todos");
   const [sizeFilter, setSizeFilter] = useState("todos");
   const [searchQuery, setSearchQuery] = useState("");
+  const [bulkStock, setBulkStock] = useState(String(DEFAULT_VARIANT_STOCK));
+  const [bulkMarkAvailable, setBulkMarkAvailable] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     variants[0]?.id || null
   );
+
+  // El selector de estilos y tallas se limita a la línea del producto según la
+  // categoría: infantil sólo ofrece estilos/tallas infantiles, adulto sólo los
+  // de adulto, y "mixed" (ambas categorías seleccionadas) desbloquea ambos.
+  const sizeLineMode = getSizeLineMode(selectedCategoryNames);
+
+  // Catálogo de tallas que corresponde a la línea del producto.
+  const sizeCatalog = availableSizes ?? getAvailableSizesByStyle(styles[0] ?? null, sizeLineMode);
 
   const filteredVariants = variants.filter((v) => {
     if (colorFilter !== "todos" && v.colorName !== colorFilter) return false;
@@ -77,6 +112,44 @@ export function ProductVariantsSubmodule({
   const activeSelectedVariant =
     variants.find((v) => v.id === selectedVariantId) || variants[0] || null;
   const categoryContext = selectedCategoryNames.length > 0 ? selectedCategoryNames : ["Producto base"];
+
+  const hasActiveFilter =
+    colorFilter !== "todos" || sizeFilter !== "todos" || searchQuery.trim().length > 0;
+
+  // Las acciones masivas se limitan al alcance del filtro activo para no pisar
+  // el stock de combinaciones que la clienta no está viendo.
+  const scopeIds = hasActiveFilter ? filteredVariants.map((v) => v.id) : undefined;
+
+  const scopeLabel = hasActiveFilter
+    ? `la selección filtrada (${filteredVariants.length} de ${variants.length})`
+    : `todas las variantes (${variants.length})`;
+
+  const handleApplyBulkStock = () => {
+    const parsed = parseInt(bulkStock, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      toast.error("Ingresa un stock masivo válido (número entero >= 0).");
+      return;
+    }
+    if (variants.length === 0) {
+      toast.error("No hay variantes para actualizar.");
+      return;
+    }
+    onBulkUpdateStock?.(parsed, scopeIds);
+    toast.success(`Stock de ${parsed} unidades aplicado a ${scopeLabel}.`);
+  };
+
+  const handleApplyBulkAvailability = (checked: boolean) => {
+    setBulkMarkAvailable(checked);
+    if (variants.length === 0) return;
+    onBulkUpdateAvailability?.(checked, scopeIds);
+    toast.success(`Variantes marcadas como ${checked ? "disponibles" : "no disponibles"} en ${scopeLabel}.`);
+  };
+
+  const resetFilters = () => {
+    setColorFilter("todos");
+    setSizeFilter("todos");
+    setSearchQuery("");
+  };
 
   const formatCOP = (num: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -114,10 +187,18 @@ export function ProductVariantsSubmodule({
             <SizesColorsEditor
               sizes={sizes}
               colors={colors}
+              styles={styles}
+              materials={materials}
+              sizeLineMode={sizeLineMode}
+              availableSizes={sizeCatalog}
               onAddSize={onAddSize}
               onRemoveSize={onRemoveSize}
               onAddColor={onAddColor}
               onRemoveColor={onRemoveColor}
+              onAddStyle={onAddStyle}
+              onRemoveStyle={onRemoveStyle}
+              onAddMaterial={onAddMaterial}
+              onRemoveMaterial={onRemoveMaterial}
             />
           </CardContent>
         </Card>
@@ -193,6 +274,76 @@ export function ProductVariantsSubmodule({
                   ))}
                 </SelectContent>
               </Select>
+
+              {hasActiveFilter && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="h-8 text-xs text-[#555829] hover:bg-[#FAF9F5]"
+                >
+                  <Search className="h-3 w-3 rotate-45" />
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+
+            {/* Acciones masivas de stock */}
+            <div className="rounded-lg border border-[#555829]/25 bg-[#FAF9F5] p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Layers className="h-3.5 w-3.5 text-[#555829]" />
+                <p className="text-xs font-semibold text-[#34351f]">Acciones masivas de stock</p>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div className="space-y-1.5">
+                  <Label htmlFor="bulk-stock" className="text-[11px] font-medium text-[#34351f]">
+                    Stock masivo
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="bulk-stock"
+                      type="number"
+                      min={0}
+                      value={bulkStock}
+                      onChange={(e) => setBulkStock(e.target.value)}
+                      className="w-24 h-8 text-xs bg-white border-[#EBE9DF]"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleApplyBulkStock}
+                      disabled={!onBulkUpdateStock || variants.length === 0}
+                      className="h-8 text-xs gap-1.5 font-medium bg-[#555829] text-white hover:bg-[#4a4d24]"
+                    >
+                      <PackageCheck className="h-3.5 w-3.5" />
+                      Aplicar a {hasActiveFilter ? "la selección" : "todas las variantes"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 pb-1">
+                  <Switch
+                    id="bulk-available"
+                    checked={bulkMarkAvailable}
+                    onCheckedChange={handleApplyBulkAvailability}
+                    disabled={!onBulkUpdateAvailability || variants.length === 0}
+                  />
+                  <Label
+                    htmlFor="bulk-available"
+                    className="text-[11px] font-medium text-[#34351f] cursor-pointer"
+                  >
+                    Marcar todas como Disponibles / En Stock
+                  </Label>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground">
+                {hasActiveFilter
+                  ? `El alcance es ${scopeLabel}. Ajusta los filtros de color o talla para cambiar la selección.`
+                  : `El alcance es ${scopeLabel}. Usa los filtros de color o talla para aplicar solo a una selección.`}
+              </p>
             </div>
 
             {/* Tabla */}
@@ -219,6 +370,7 @@ export function ProductVariantsSubmodule({
                   ) : (
                     filteredVariants.map((v) => {
                       const isSelected = activeSelectedVariant?.id === v.id;
+                      const isAvailable = v.isAvailable ?? true;
                       const hasStock = v.stock > 0;
 
                       return (
@@ -253,7 +405,14 @@ export function ProductVariantsSubmodule({
 
                           {/* Talla */}
                           <TableCell className="py-2 text-xs font-bold text-[#34351f]">
-                            {v.size}
+                            <div className="flex flex-col items-start gap-0.5">
+                              <span>{v.size}</span>
+                              {isLargeSize(v.size) && (
+                                <Badge variant="outline" className="border-[#555829] text-[#555829] text-[9px] px-1 py-0 font-normal bg-[#555829]/5">
+                                  +$10k Talla XL+
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
 
                           {/* Categoría / Tipo */}
@@ -318,39 +477,44 @@ export function ProductVariantsSubmodule({
                             />
                           </TableCell>
 
-                          {/* Precio */}
+                          {/* Precio (Inmutable / Auto-calculado) */}
                           <TableCell className="py-2 text-xs">
-                            <Input
-                              type="number"
-                              min={0}
-                              step={100}
-                              placeholder={formatCOP(basePrice)}
-                              value={v.price ?? ""}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = Number(raw);
-                                onUpdateVariant(v.id, {
-                                  price: raw === "" || !Number.isFinite(parsed) ? undefined : parsed,
-                                });
-                              }}
-                              className="h-7 w-32 text-xs bg-white border-[#EBE9DF]"
-                              onClick={(e) => e.stopPropagation()}
-                              title={`Vacío usa el precio base: ${formatCOP(basePrice)}`}
-                            />
-                            <p className="mt-1 text-[10px] text-muted-foreground">
-                              {getPriceHint(v.price)}
-                            </p>
+                            {(() => {
+                              const isPlus = isLargeSize(v.size);
+                              const computedPrice = v.price ?? (isPlus ? basePrice + 10000 : basePrice);
+
+                              return (
+                                <>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    step={100}
+                                    value={computedPrice || ""}
+                                    readOnly
+                                    disabled
+                                    className="h-7 w-32 text-xs bg-[#FAF9F5] border-[#EBE9DF] font-bold text-[#555829] cursor-not-allowed"
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="Precio inmutable auto-calculado por regla de estilo y talla."
+                                  />
+                                  <p className="mt-1 text-[10px] font-medium text-[#555829]">
+                                    {isPlus
+                                      ? `+$10k Talla XL+ (${formatCOP(computedPrice)})`
+                                      : `Base estilo (${formatCOP(computedPrice)})`}
+                                  </p>
+                                </>
+                              );
+                            })()}
                           </TableCell>
 
                           {/* Estado Badge */}
                           <TableCell className="py-2 text-right">
-                            {hasStock ? (
+                            {hasStock && isAvailable ? (
                               <Badge className="bg-[#555829] text-white text-[10px] py-0 px-2">
                                 Disponible
                               </Badge>
                             ) : (
                               <Badge className="bg-[#EBE9DF] text-[#666459] text-[10px] py-0 px-2">
-                                Sin stock
+                                {hasStock ? "No disponible" : "Sin stock"}
                               </Badge>
                             )}
                           </TableCell>

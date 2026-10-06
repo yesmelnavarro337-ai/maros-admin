@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Trash2, Save, Loader2 } from "lucide-react";
@@ -13,6 +13,7 @@ import { getCollections } from "@/features/collections/services/collections.serv
 import type { Collection } from "@/features/collections/types";
 import { useVariantMatrix } from "../hooks/use-variant-matrix";
 import { createProduct, updateProduct, deleteProduct } from "../services/products.service";
+import { getStyles, styleNamesToIds, type StyleOption } from "../services/styles.service";
 import { ProductInfoSubmodule } from "./product-info-submodule";
 import { ProductVariantsSubmodule } from "./product-variants-submodule";
 import { ProductCollectionSubmodule } from "./product-collection-submodule";
@@ -20,6 +21,13 @@ import { ProductConfigSubmodule } from "./product-config-submodule";
 import { ProductSeoSubmodule } from "./product-seo-submodule";
 import { ApiError } from "@/lib/api/errors";
 import { generateUniqueSku } from "../utils/sku-generator";
+import { calculateAutomaticBasePrice, getSizeLineMode } from "../utils/price-calculator";
+import {
+  getAvailableSizesByStyle,
+  isInfantilStyleName,
+  keepAllowedSizes,
+  resolveSizeLine,
+} from "../utils/size-helpers";
 import {
   DELIVERY_TIME_OPTIONS,
   SHIPPING_METHOD_OPTIONS,
@@ -115,26 +123,6 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     initialData?.seo?.socialImage
   );
 
-  // Variant Matrix
-  const {
-    sizes,
-    colors,
-    variants,
-    addSize,
-    removeSize,
-    addColor,
-    removeColor,
-    updateVariant,
-    regenerateAllSkus,
-  } = useVariantMatrix(
-    initialData?.sizes ?? ["S", "M", "L"],
-    initialData?.colors ?? [
-      { name: "Beige Satín", hex: "#E8D8C8", primaryHex: "#E8D8C8", isCombined: false },
-      { name: "Verde Oliva", hex: "#555829", primaryHex: "#555829", isCombined: false },
-    ],
-    initialData?.variants ?? []
-  );
-
   const selectedCategoryNames = useMemo(
     () =>
       categories
@@ -143,9 +131,116 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     [categories, categoryIds]
   );
 
+  // Modo de línea de tallas/estilos según categorías seleccionadas:
+  // - "infantil": solo categorías infantiles → solo tallas/estilos infantiles
+  // - "adulto": solo categorías de adulto → solo tallas/estilos adultos
+  // - "mixed": ambas → tallas/estilos de AMBAS líneas disponibles
+  const sizeLineMode = useMemo(
+    () => getSizeLineMode(selectedCategoryNames),
+    [selectedCategoryNames]
+  );
+
+  // Variant Matrix
+  const {
+    sizes,
+    colors,
+    styles,
+    materials,
+    variants,
+    addSize,
+    removeSize,
+    replaceSizes,
+    addColor,
+    removeColor,
+    addStyle,
+    removeStyle,
+    addMaterial,
+    removeMaterial,
+    updateVariant,
+    bulkUpdateStock,
+    bulkUpdateAvailability,
+    regenerateAllSkus,
+  } = useVariantMatrix(
+    initialData?.sizes ?? ["S", "M", "L"],
+    initialData?.colors ?? [
+      { name: "Beige Satín", hex: "#E8D8C8", primaryHex: "#E8D8C8", isCombined: false },
+      { name: "Verde Oliva", hex: "#555829", primaryHex: "#555829", isCombined: false },
+    ],
+    initialData?.variants ?? [],
+    initialData?.styles ?? [],
+    initialData?.materials ?? [],
+    basePrice,
+    sizeLineMode
+  );
+
+  /**
+   * Catálogo de tallas según el estilo seleccionado y el modo de línea.
+   * En modo "mixed" se ofrece el catálogo unificado.
+   */
+  const availableSizes = useMemo(
+    () => getAvailableSizesByStyle(styles[0] ?? null, sizeLineMode),
+    [styles, sizeLineMode]
+  );
+
+  // Al cambiar de línea se descartan las tallas que ya no son válidas
+  const sizeLine = resolveSizeLine(styles[0] ?? null, sizeLineMode);
+  const previousSizeLine = useRef(sizeLine);
+
+  useEffect(() => {
+    if (previousSizeLine.current === sizeLine) return;
+    previousSizeLine.current = sizeLine;
+
+    replaceSizes(keepAllowedSizes(sizes, styles[0] ?? null, sizeLineMode));
+
+    // Al cambiar de línea también se limpian los estilos de la línea contraria:
+    // en "infantil" se quitan los estilos de adulto y en "adulto" los infantiles.
+    // En "mixed" se conservan todos porque ambas líneas están habilitadas.
+    if (sizeLineMode !== "mixed") {
+      styles.forEach((style) => {
+        const isInfantilStyle = isInfantilStyleName(style);
+        if (sizeLineMode === "infantil" && !isInfantilStyle) removeStyle(style);
+        if (sizeLineMode === "adulto" && isInfantilStyle) removeStyle(style);
+      });
+    }
+    // `sizes` y `styles` se leen de forma intencionada sólo al cambiar de línea.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sizeLine, sizeLineMode, replaceSizes, removeStyle]);
+
+  // Auto-calcular precio base cuando se modifican las categorías o los estilos
+  useEffect(() => {
+    if (categoryIds.length > 0) {
+      const catNames = categories
+        .filter((c) => categoryIds.includes(c.id))
+        .map((c) => c.name);
+      const autoPrice = calculateAutomaticBasePrice(catNames, styles);
+      if (autoPrice > 0 && (mode === "create" || basePrice === 0)) {
+        setBasePrice(autoPrice);
+      }
+    }
+  }, [categoryIds, styles, categories, mode]);
+
   // Dialogs & Submitting state
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Catálogo de estilos: ids persistidos en la BD para enviar styleIds al guardar.
+  const [styleCatalog, setStyleCatalog] = useState<StyleOption[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadStyles() {
+      try {
+        const catalog = await getStyles();
+        if (mounted) setStyleCatalog(catalog);
+      } catch {
+        if (mounted) setStyleCatalog([]);
+      }
+    }
+    loadStyles();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -223,7 +318,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
           const unique: typeof variants = [];
           const seen = new Set<string>();
           for (const v of variants) {
-            const key = `${v.size.trim().toUpperCase()}_${v.colorName.trim().toUpperCase()}`;
+            const key = `${v.size.trim().toUpperCase()}_${v.colorName.trim().toUpperCase()}_${(v.styleName || "").trim().toUpperCase()}_${(v.materialName || "").trim().toUpperCase()}`;
             if (!seen.has(key)) {
               seen.add(key);
               unique.push(v);
@@ -234,16 +329,20 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             size: v.size,
             colorName: v.colorName,
             colorHex: v.primaryHex || v.colorHex,
+            styleName: v.styleName ?? null,
+            materialName: v.materialName ?? null,
+            isAvailable: v.isAvailable ?? true,
             primaryHex: v.primaryHex || v.colorHex,
             secondaryHex: v.secondaryHex ?? null,
             isCombined: Boolean(v.isCombined),
-            sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName),
+            sku: v.sku.trim() || generateUniqueSku(v.size, v.colorName, v.styleName, v.materialName),
             stock: Number(v.stock),
             price: v.price != null && !isNaN(Number(v.price)) ? Number(v.price) : null,
             image: v.image,
           }));
         })(),
         collectionIds,
+        styleIds: styleNamesToIds(styles, styleCatalog),
       };
 
       if (mode === "create") {
@@ -412,6 +511,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             collections={collections}
             loadingCategories={loadingCategories}
             loadingCollections={loadingCollections}
+            styles={styles}
           />
         </TabsContent>
 
@@ -420,14 +520,23 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
           <ProductVariantsSubmodule
             sizes={sizes}
             colors={colors}
+            styles={styles}
+            materials={materials}
             variants={variants}
             basePrice={basePrice}
             selectedCategoryNames={selectedCategoryNames}
+            availableSizes={availableSizes}
             onAddSize={addSize}
             onRemoveSize={removeSize}
             onAddColor={addColor}
             onRemoveColor={removeColor}
+            onAddStyle={addStyle}
+            onRemoveStyle={removeStyle}
+            onAddMaterial={addMaterial}
+            onRemoveMaterial={removeMaterial}
             onUpdateVariant={updateVariant}
+            onBulkUpdateStock={bulkUpdateStock}
+            onBulkUpdateAvailability={bulkUpdateAvailability}
             onRegenerateAllSkus={regenerateAllSkus}
           />
         </TabsContent>

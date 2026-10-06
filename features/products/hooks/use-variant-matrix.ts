@@ -1,54 +1,88 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ProductColor, ProductVariant } from "../types";
+import { DEFAULT_VARIANT_STOCK } from "../types";
 import { generateUniqueSku } from "../utils/sku-generator";
+import { getSizeSurcharge } from "../utils/price-calculator";
+import { isInfantilStyleName, type SizeLineMode } from "../utils/size-helpers";
 
 function regenerateVariants(
   sizes: string[],
   colors: ProductColor[],
-  existing: ProductVariant[]
+  styles: string[],
+  materials: string[],
+  existing: ProductVariant[],
+  basePrice: number = 0,
+  sizeLineMode: SizeLineMode = "adulto"
 ): ProductVariant[] {
-  return sizes.flatMap((size) =>
-    colors.map((color) => {
-      const found = existing.find(
-        (v) => v.size === size && v.colorName === color.name
-      );
-      const primaryHex = color.primaryHex || color.hex || "#000000";
-      const secondaryHex = color.secondaryHex || null;
-      const isCombined = Boolean(color.isCombined);
+  const styleList = styles.length > 0 ? styles : [undefined];
+  const materialList = materials.length > 0 ? materials : [undefined];
 
-      return (
-        found
-          ? {
+  return sizes.flatMap((size) =>
+    colors.flatMap((color) =>
+      styleList.flatMap((styleName) =>
+        materialList.map((materialName) => {
+          const found = existing.find(
+            (v) =>
+              v.size === size &&
+              v.colorName === color.name &&
+              (v.styleName ?? undefined) === styleName &&
+              (v.materialName ?? undefined) === materialName
+          );
+          const primaryHex = color.primaryHex || color.hex || "#000000";
+          const secondaryHex = color.secondaryHex || null;
+          const isCombined = Boolean(color.isCombined);
+          // Recargo por rango de talla: juvenil infantil (10-16) o talla > L.
+          // En modo mixed, el recargo se aplica según el tipo de talla (infantil vs adulto)
+          const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+            ? isInfantilStyleName(styleName)
+            : false;
+          const surcharge = getSizeSurcharge(size, isInfantilSize);
+          const sizedPrice = surcharge > 0 && basePrice > 0 ? basePrice + surcharge : undefined;
+
+          if (found) {
+            return {
               ...found,
               colorHex: primaryHex,
               primaryHex,
               secondaryHex,
               isCombined,
-            }
-          : {
-              id: `${size}-${color.name}-${Math.random().toString(36).slice(2, 7)}`,
-              size,
-              colorName: color.name,
-              colorHex: primaryHex,
-              primaryHex,
-              secondaryHex,
-              isCombined,
-              sku: generateUniqueSku(size, color.name),
-              stock: 0,
-              price: undefined,
-              image: undefined,
-            }
-      );
-    })
+              styleName: styleName ?? found.styleName ?? null,
+              materialName: materialName ?? found.materialName ?? null,
+              price: found.price ?? sizedPrice,
+            };
+          }
+
+          return {
+            id: `${size}-${color.name}-${styleName || "std"}-${materialName || "std"}-${Math.random().toString(36).slice(2, 7)}`,
+            size,
+            colorName: color.name,
+            colorHex: primaryHex,
+            styleName: styleName ?? null,
+            materialName: materialName ?? null,
+            primaryHex,
+            secondaryHex,
+            isCombined,
+            sku: generateUniqueSku(size, color.name, styleName, materialName),
+            stock: DEFAULT_VARIANT_STOCK,
+            price: sizedPrice,
+            image: undefined,
+          };
+        })
+      )
+    )
   );
 }
 
 export function useVariantMatrix(
   initialSizes: string[],
   initialColors: ProductColor[],
-  initialVariants: ProductVariant[]
+  initialVariants: ProductVariant[],
+  initialStyles: string[] = [],
+  initialMaterials: string[] = [],
+  basePrice: number = 0,
+  sizeLineMode: SizeLineMode = "adulto"
 ) {
   const [sizes, setSizes] = useState<string[]>(initialSizes);
   const [colors, setColors] = useState<ProductColor[]>(() =>
@@ -59,36 +93,113 @@ export function useVariantMatrix(
       isCombined: Boolean(c.isCombined),
     }))
   );
-  const [variants, setVariants] = useState<ProductVariant[]>(() =>
-    initialVariants.map((v) => ({
-      ...v,
-      primaryHex: v.primaryHex || v.colorHex || "#000000",
-      secondaryHex: v.secondaryHex || null,
-      isCombined: Boolean(v.isCombined),
-    }))
-  );
+  const [styles, setStyles] = useState<string[]>(initialStyles);
+  const [materials, setMaterials] = useState<string[]>(initialMaterials);
+
+  /**
+   * Determina si el producto está en modo infantil:
+   * - "infantil": siempre true
+   * - "adulto": siempre false
+   * - "mixed": true si hay estilos infantiles seleccionados, false en caso contrario
+   * Esto permite que en modo mixed, si el usuario selecciona un estilo infantil,
+   * se apliquen las reglas infantiles a ese estilo.
+   */
+  const isInfantil =
+    sizeLineMode === "infantil" ||
+    (sizeLineMode === "mixed" && styles.some((s) => isInfantilStyleName(s)));
+
+  const [variants, setVariants] = useState<ProductVariant[]>(() => {
+    const resolvePrice = (price: number | null | undefined, size: string) => {
+      if (price != null) return price;
+      const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+        ? isInfantilStyleName(styles[0] ?? "")
+        : false;
+      const surcharge = getSizeSurcharge(size, isInfantilSize);
+      return surcharge > 0 && basePrice > 0 ? basePrice + surcharge : undefined;
+    };
+
+    if (initialVariants.length > 0) {
+      return initialVariants.map((v) => ({
+        ...v,
+        primaryHex: v.primaryHex || v.colorHex || "#000000",
+        secondaryHex: v.secondaryHex || null,
+        isCombined: Boolean(v.isCombined),
+        price: resolvePrice(v.price, v.size),
+      }));
+    }
+    return regenerateVariants(
+      initialSizes,
+      initialColors,
+      initialStyles,
+      initialMaterials,
+      [],
+      basePrice,
+      sizeLineMode
+    );
+  });
+
+  // Cuando cambia el precio base (o la línea) se reajustan las variantes
+  // con recargo por rango de talla, sin pisar precios personalizados a mano.
+  useEffect(() => {
+    if (basePrice > 0) {
+      setVariants((prev) =>
+        prev.map((v) => {
+          const styleForVariant = v.styleName ?? styles[0] ?? "";
+          const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+            ? isInfantilStyleName(styleForVariant)
+            : false;
+          const surcharge = getSizeSurcharge(v.size, isInfantilSize);
+          if (surcharge > 0) {
+            const autoPrice = basePrice + surcharge;
+            return {
+              ...v,
+              price:
+                v.price == null || v.price === 0 || v.price === basePrice ? autoPrice : v.price,
+            };
+          }
+          return v;
+        })
+      );
+    }
+  }, [basePrice, sizeLineMode, styles, isInfantil]);
 
   const addSize = useCallback(
     (size: string) => {
       setSizes((prev) => {
         if (prev.includes(size)) return prev;
         const next = [...prev, size];
-        setVariants((v) => regenerateVariants(next, colors, v));
+        setVariants((v) => regenerateVariants(next, colors, styles, materials, v, basePrice, sizeLineMode));
         return next;
       });
     },
-    [colors]
+    [colors, styles, materials, basePrice, sizeLineMode]
   );
 
   const removeSize = useCallback(
     (size: string) => {
       setSizes((prev) => {
         const next = prev.filter((s) => s !== size);
-        setVariants((v) => regenerateVariants(next, colors, v));
+        setVariants((v) => regenerateVariants(next, colors, styles, materials, v, basePrice, sizeLineMode));
         return next;
       });
     },
-    [colors]
+    [colors, styles, materials, basePrice, sizeLineMode]
+  );
+
+  /**
+   * Reemplaza el listado completo de tallas y regenera la matriz una sola vez.
+   * Se usa al cambiar de línea para descartar de golpe las
+   * tallas que ya no son válidas, en lugar de encadenar removeSize.
+   */
+  const replaceSizes = useCallback(
+    (next: string[]) => {
+      setSizes(() => {
+        const deduped = Array.from(new Set(next));
+        setVariants((v) => regenerateVariants(deduped, colors, styles, materials, v, basePrice, sizeLineMode));
+        return deduped;
+      });
+    },
+    [colors, styles, materials, basePrice, sizeLineMode]
   );
 
   const addColor = useCallback(
@@ -102,22 +213,68 @@ export function useVariantMatrix(
           isCombined: Boolean(color.isCombined),
         };
         const next = [...prev, normalizedColor];
-        setVariants((v) => regenerateVariants(sizes, next, v));
+        setVariants((v) => regenerateVariants(sizes, next, styles, materials, v, basePrice, sizeLineMode));
         return next;
       });
     },
-    [sizes]
+    [sizes, styles, materials, basePrice, sizeLineMode]
   );
 
   const removeColor = useCallback(
     (colorName: string) => {
       setColors((prev) => {
         const next = prev.filter((c) => c.name !== colorName);
-        setVariants((v) => regenerateVariants(sizes, next, v));
+        setVariants((v) => regenerateVariants(sizes, next, styles, materials, v, basePrice, sizeLineMode));
         return next;
       });
     },
-    [sizes]
+    [sizes, styles, materials, basePrice, sizeLineMode]
+  );
+
+  const addStyle = useCallback(
+    (styleName: string) => {
+      setStyles((prev) => {
+        if (prev.includes(styleName)) return prev;
+        const next = [...prev, styleName];
+        setVariants((v) => regenerateVariants(sizes, colors, next, materials, v, basePrice, sizeLineMode));
+        return next;
+      });
+    },
+    [sizes, colors, materials, basePrice, sizeLineMode]
+  );
+
+  const removeStyle = useCallback(
+    (styleName: string) => {
+      setStyles((prev) => {
+        const next = prev.filter((s) => s !== styleName);
+        setVariants((v) => regenerateVariants(sizes, colors, next, materials, v, basePrice, sizeLineMode));
+        return next;
+      });
+    },
+    [sizes, colors, materials, basePrice, sizeLineMode]
+  );
+
+  const addMaterial = useCallback(
+    (materialName: string) => {
+      setMaterials((prev) => {
+        if (prev.includes(materialName)) return prev;
+        const next = [...prev, materialName];
+        setVariants((v) => regenerateVariants(sizes, colors, styles, next, v, basePrice, sizeLineMode));
+        return next;
+      });
+    },
+    [sizes, colors, styles, basePrice, sizeLineMode]
+  );
+
+  const removeMaterial = useCallback(
+    (materialName: string) => {
+      setMaterials((prev) => {
+        const next = prev.filter((m) => m !== materialName);
+        setVariants((v) => regenerateVariants(sizes, colors, styles, next, v, basePrice, sizeLineMode));
+        return next;
+      });
+    },
+    [sizes, colors, styles, basePrice, sizeLineMode]
   );
 
   const updateVariant = useCallback(
@@ -127,11 +284,33 @@ export function useVariantMatrix(
     []
   );
 
+  /**
+   * Aplica stock a todas las variantes o solo a las indicadas (acciones masivas del admin).
+   * Sin `variantIds` el alcance es la matriz completa.
+   */
+  const bulkUpdateStock = useCallback((stock: number, variantIds?: string[]) => {
+    const safeStock = Number.isFinite(stock) && stock >= 0 ? Math.trunc(stock) : 0;
+    setVariants((prev) =>
+      prev.map((v) =>
+        !variantIds || variantIds.includes(v.id) ? { ...v, stock: safeStock } : v
+      )
+    );
+  }, []);
+
+  /** Marca como disponibles (o no) todas las variantes o solo las indicadas. */
+  const bulkUpdateAvailability = useCallback((isAvailable: boolean, variantIds?: string[]) => {
+    setVariants((prev) =>
+      prev.map((v) =>
+        !variantIds || variantIds.includes(v.id) ? { ...v, isAvailable } : v
+      )
+    );
+  }, []);
+
   const regenerateAllSkus = useCallback(() => {
     setVariants((prev) =>
       prev.map((v) => ({
         ...v,
-        sku: generateUniqueSku(v.size, v.colorName),
+        sku: generateUniqueSku(v.size, v.colorName, v.styleName, v.materialName),
       }))
     );
   }, []);
@@ -139,7 +318,9 @@ export function useVariantMatrix(
   const generateSkuForVariant = useCallback((id: string) => {
     setVariants((prev) =>
       prev.map((v) =>
-        v.id === id ? { ...v, sku: generateUniqueSku(v.size, v.colorName) } : v
+        v.id === id
+          ? { ...v, sku: generateUniqueSku(v.size, v.colorName, v.styleName, v.materialName) }
+          : v
       )
     );
   }, []);
@@ -147,12 +328,22 @@ export function useVariantMatrix(
   return {
     sizes,
     colors,
+    styles,
+    materials,
     variants,
+    isInfantil,
     addSize,
     removeSize,
+    replaceSizes,
     addColor,
     removeColor,
+    addStyle,
+    removeStyle,
+    addMaterial,
+    removeMaterial,
     updateVariant,
+    bulkUpdateStock,
+    bulkUpdateAvailability,
     regenerateAllSkus,
     generateSkuForVariant,
   };

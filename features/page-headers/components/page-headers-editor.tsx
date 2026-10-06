@@ -74,7 +74,7 @@ export function PageHeadersEditor() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-3xl text-foreground">Encabezados de página</h1>
-        <p className="text-muted-foreground mt-1">Personaliza los encabezados amplios de Colecciones, Blog y Galería</p>
+        <p className="text-muted-foreground mt-1">Personaliza los encabezados e imágenes destacadas de las páginas de la tienda</p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">

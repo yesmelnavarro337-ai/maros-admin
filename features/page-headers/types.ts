@@ -1,4 +1,4 @@
-export const PAGE_KEYS = ["collections", "blog", "gallery"] as const;
+export const PAGE_KEYS = ["collections", "blog", "gallery", "about", "historia"] as const;
 
 export type PageKey = (typeof PAGE_KEYS)[number];
 
@@ -6,6 +6,8 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   collections: "Colecciones",
   blog: "Blog",
   gallery: "Galería",
+  about: "Nosotros",
+  historia: "Historia (Nosotros)",
 };
 
 export const DEFAULT_TEXT_COLOR = "#F9F6F0";
@@ -23,6 +25,15 @@ const DEFAULT_CONTENT: Record<PageKey, { title: string; subtitle: string }> = {
   gallery: {
     title: "Galería",
     subtitle: "Momentos especiales con Maro's Pijamas.",
+  },
+  about: {
+    title: "Más de 6 años creando pijamas únicas",
+    subtitle:
+      "Maro's Pijamas nació con un sueño simple: crear prendas únicas, cómodas y hechas con amor para los momentos más especiales de tu vida.",
+  },
+  historia: {
+    title: "Un sueño hecho a mano",
+    subtitle: "De un sueño familiar, a una gran comunidad.",
   },
 };
 

@@ -1,5 +1,12 @@
 import { apiFetch } from "@/lib/api/client-fetcher";
-import type { Season, SeasonStatus, SeasonColors } from "../types";
+import type { Season, SeasonStatus, SeasonColors, SeasonImage, SeasonImageInput } from "../types";
+
+interface ApiSeasonImage {
+  id?: string | null;
+  imageUrl?: string | null;
+  order?: number | null;
+  isPrimary?: boolean | null;
+}
 
 interface ApiSeason {
   id: string;
@@ -18,9 +25,22 @@ interface ApiSeason {
   ctaText: string;
   ctaLink: string;
   featuredProductIds: string[];
+  images?: ApiSeasonImage[] | null;
   isActive?: boolean;
   coverImageUrl?: string | null;
   productsCount?: number;
+}
+
+function adaptImages(images?: ApiSeasonImage[] | null): SeasonImage[] {
+  return (images ?? [])
+    .filter((image): image is ApiSeasonImage => Boolean(image?.imageUrl))
+    .map((image, index) => ({
+      id: image.id ?? "",
+      imageUrl: image.imageUrl as string,
+      order: image.order ?? index,
+      isPrimary: image.isPrimary ?? false,
+    }))
+    .sort((a, b) => a.order - b.order);
 }
 
 function statusFromApi(status: string): SeasonStatus {
@@ -65,6 +85,7 @@ function adaptSeason(s: ApiSeason): Season {
     ctaText: s.ctaText ?? "",
     ctaLink: s.ctaLink ?? "",
     featuredProductIds: (s.featuredProductIds ?? []).filter((pid): pid is string => Boolean(pid)),
+    images: adaptImages(s.images),
     isActive: s.isActive ?? (status === "activa"),
     productsCount: s.productsCount ?? (s.featuredProductIds ? s.featuredProductIds.length : 0),
     isVisibleStore: true,
@@ -90,6 +111,7 @@ export interface SeasonPayload {
   isVisibleStore?: boolean;
   isFeaturedHome?: boolean;
   allowCustomization?: boolean;
+  images?: SeasonImageInput[];
 }
 
 function buildApiPayload(data: SeasonPayload) {
@@ -107,6 +129,13 @@ function buildApiPayload(data: SeasonPayload) {
     ctaLink: data.ctaLink ?? "",
     featuredProductIds: (data.featuredProductIds ?? []).filter((pid): pid is string => Boolean(pid)),
     status: data.status ? statusToApi(data.status) : undefined,
+    // El índice del array define el orden final; el backend renumera a 0..n-1.
+    images: (data.images ?? []).map((image, order) => ({
+      id: image.id || null,
+      imageUrl: image.imageUrl,
+      order,
+      isPrimary: image.isPrimary,
+    })),
   };
 }
 
@@ -152,6 +181,14 @@ export async function updateSeason(id: string, data: Partial<SeasonPayload>): Pr
     ctaLink: data.ctaLink ?? current.ctaLink,
     featuredProductIds: data.featuredProductIds ?? current.featuredProductIds,
     status: data.status ?? current.status,
+    // Sin esto el payload enviaría `images: []` y borraría la galería al editar.
+    images:
+      data.images ??
+      current.images.map((image) => ({
+        id: image.id || undefined,
+        imageUrl: image.imageUrl,
+        isPrimary: image.isPrimary,
+      })),
   };
 
   const updated = await apiFetch<ApiSeason>(`Seasons/${id}`, {

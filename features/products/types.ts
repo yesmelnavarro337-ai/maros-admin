@@ -28,15 +28,21 @@ export interface ProductVariant {
   size: string;
   colorName: string;
   colorHex: string;
+  styleName?: string | null;
+  materialName?: string | null;
   primaryHex?: string;
   secondaryHex?: string | null;
   isCombined?: boolean;
   sku: string;
   stock: number;
+  isAvailable?: boolean;
   image?: string;
   price?: number | null;
   status?: string;
 }
+
+/** Stock aplicado por defecto a las variantes recién generadas por la matriz. */
+export const DEFAULT_VARIANT_STOCK = 50;
 
 export interface CategoryPriceEntry {
   categoryId: string;
@@ -75,6 +81,9 @@ export interface Product {
   imageDetails?: ProductImageItem[];
   sizes: string[];
   colors: ProductColor[];
+  styles?: string[];
+  styleIds?: string[];
+  materials?: string[];
   variants: ProductVariant[];
   collectionIds: string[];
   featuredHome: boolean;
