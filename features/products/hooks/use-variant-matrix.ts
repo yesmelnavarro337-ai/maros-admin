@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { ProductColor, ProductVariant } from "../types";
 import { DEFAULT_VARIANT_STOCK } from "../types";
-import { generateUniqueSku } from "../utils/sku-generator";
+import { buildSku, createSkuBatchAllocator, processInChunks } from "../utils/sku-generator";
 import { getSizeSurcharge } from "../utils/price-calculator";
 import { isInfantilStyleName, type SizeLineMode } from "../utils/size-helpers";
+
+export interface SkuContext {
+  categoryName?: string;
+  productName?: string;
+}
 
 function regenerateVariants(
   sizes: string[],
@@ -14,7 +19,8 @@ function regenerateVariants(
   materials: string[],
   existing: ProductVariant[],
   basePrice: number = 0,
-  sizeLineMode: SizeLineMode = "adulto"
+  sizeLineMode: SizeLineMode = "adulto",
+  skuContext: SkuContext = {}
 ): ProductVariant[] {
   const styleList = styles.length > 0 ? styles : [undefined];
   const materialList = materials.length > 0 ? materials : [undefined];
@@ -64,7 +70,14 @@ function regenerateVariants(
             primaryHex,
             secondaryHex,
             isCombined,
-            sku: generateUniqueSku(size, color.name, styleName, materialName),
+            sku: buildSku({
+              categoryName: skuContext.categoryName,
+              productName: skuContext.productName,
+              size,
+              colorName: color.name,
+              styleName,
+              materialName,
+            }),
             stock: DEFAULT_VARIANT_STOCK,
             price: sizedPrice,
             image: undefined,
@@ -82,7 +95,8 @@ export function useVariantMatrix(
   initialStyles: string[] = [],
   initialMaterials: string[] = [],
   basePrice: number = 0,
-  sizeLineMode: SizeLineMode = "adulto"
+  sizeLineMode: SizeLineMode = "adulto",
+  skuContext: SkuContext = {}
 ) {
   const [sizes, setSizes] = useState<string[]>(initialSizes);
   const [colors, setColors] = useState<ProductColor[]>(() =>
@@ -95,6 +109,14 @@ export function useVariantMatrix(
   );
   const [styles, setStyles] = useState<string[]>(initialStyles);
   const [materials, setMaterials] = useState<string[]>(initialMaterials);
+
+  /**
+   * IDs de variantes cuyo SKU fue editado a mano: una "Regeneración masiva"
+   * nunca pisa esos SKUs. Vive en ref para no provocar re-renders.
+   */
+  const manualSkuIdsRef = useRef<Set<string>>(new Set());
+  const skuContextRef = useRef(skuContext);
+  const variantsRef = useRef<ProductVariant[]>([]);
 
   /**
    * Determina si el producto está en modo infantil:
@@ -134,8 +156,17 @@ export function useVariantMatrix(
       initialMaterials,
       [],
       basePrice,
-      sizeLineMode
+      sizeLineMode,
+      skuContext
     );
+  });
+
+  // Espejos mutables del estado: se sincronizan tras cada render y permiten
+  // leer el snapshot actual desde callbacks asíncronos sin redeclarar sus
+  // dependencias (los refs solo se escriben dentro de effects).
+  useEffect(() => {
+    skuContextRef.current = skuContext;
+    variantsRef.current = variants;
   });
 
   // Cuando cambia el precio base (o la línea) se reajustan las variantes
@@ -168,7 +199,7 @@ export function useVariantMatrix(
       setSizes((prev) => {
         if (prev.includes(size)) return prev;
         const next = [...prev, size];
-        setVariants((v) => regenerateVariants(next, colors, styles, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(next, colors, styles, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -179,7 +210,7 @@ export function useVariantMatrix(
     (size: string) => {
       setSizes((prev) => {
         const next = prev.filter((s) => s !== size);
-        setVariants((v) => regenerateVariants(next, colors, styles, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(next, colors, styles, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -195,7 +226,7 @@ export function useVariantMatrix(
     (next: string[]) => {
       setSizes(() => {
         const deduped = Array.from(new Set(next));
-        setVariants((v) => regenerateVariants(deduped, colors, styles, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(deduped, colors, styles, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return deduped;
       });
     },
@@ -213,7 +244,7 @@ export function useVariantMatrix(
           isCombined: Boolean(color.isCombined),
         };
         const next = [...prev, normalizedColor];
-        setVariants((v) => regenerateVariants(sizes, next, styles, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(sizes, next, styles, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -224,7 +255,7 @@ export function useVariantMatrix(
     (colorName: string) => {
       setColors((prev) => {
         const next = prev.filter((c) => c.name !== colorName);
-        setVariants((v) => regenerateVariants(sizes, next, styles, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(sizes, next, styles, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -236,7 +267,7 @@ export function useVariantMatrix(
       setStyles((prev) => {
         if (prev.includes(styleName)) return prev;
         const next = [...prev, styleName];
-        setVariants((v) => regenerateVariants(sizes, colors, next, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(sizes, colors, next, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -247,7 +278,7 @@ export function useVariantMatrix(
     (styleName: string) => {
       setStyles((prev) => {
         const next = prev.filter((s) => s !== styleName);
-        setVariants((v) => regenerateVariants(sizes, colors, next, materials, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(sizes, colors, next, materials, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -259,7 +290,7 @@ export function useVariantMatrix(
       setMaterials((prev) => {
         if (prev.includes(materialName)) return prev;
         const next = [...prev, materialName];
-        setVariants((v) => regenerateVariants(sizes, colors, styles, next, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(sizes, colors, styles, next, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -270,7 +301,7 @@ export function useVariantMatrix(
     (materialName: string) => {
       setMaterials((prev) => {
         const next = prev.filter((m) => m !== materialName);
-        setVariants((v) => regenerateVariants(sizes, colors, styles, next, v, basePrice, sizeLineMode));
+        setVariants((v) => regenerateVariants(sizes, colors, styles, next, v, basePrice, sizeLineMode, skuContextRef.current));
         return next;
       });
     },
@@ -279,6 +310,10 @@ export function useVariantMatrix(
 
   const updateVariant = useCallback(
     (id: string, patch: Partial<ProductVariant>) => {
+      // Un SKU tocado a mano queda bloqueado ante regeneraciones masivas.
+      if (patch.sku !== undefined) {
+        manualSkuIdsRef.current.add(id);
+      }
       setVariants((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
     },
     []
@@ -306,12 +341,35 @@ export function useVariantMatrix(
     );
   }, []);
 
-  const regenerateAllSkus = useCallback(() => {
+  /**
+   * Regeneración masiva de SKUs: respeta los editados a mano y procesa el
+   * lote en bloques asíncronos (chunking con cese del hilo principal) para no
+   * congelar la UI con matrices de +600 variantes.
+   */
+  const regenerateAllSkus = useCallback(async () => {
+    const snapshot = variantsRef.current;
+
+    // Los SKUs manuales se reservan para que el lote no colisione con ellos.
+    const reserved = new Set(
+      snapshot.filter((v) => manualSkuIdsRef.current.has(v.id)).map((v) => v.sku)
+    );
+    const regenerable = snapshot.filter((v) => !manualSkuIdsRef.current.has(v.id));
+    const allocate = createSkuBatchAllocator(reserved);
+
+    const skus = await processInChunks(regenerable, 200, (v) =>
+      allocate({
+        categoryName: skuContextRef.current.categoryName,
+        productName: skuContextRef.current.productName,
+        size: v.size,
+        colorName: v.colorName,
+        styleName: v.styleName,
+        materialName: v.materialName,
+      })
+    );
+
+    const skuById = new Map(regenerable.map((v, i) => [v.id, skus[i]]));
     setVariants((prev) =>
-      prev.map((v) => ({
-        ...v,
-        sku: generateUniqueSku(v.size, v.colorName, v.styleName, v.materialName),
-      }))
+      prev.map((v) => (skuById.has(v.id) ? { ...v, sku: skuById.get(v.id)! } : v))
     );
   }, []);
 
@@ -319,7 +377,17 @@ export function useVariantMatrix(
     setVariants((prev) =>
       prev.map((v) =>
         v.id === id
-          ? { ...v, sku: generateUniqueSku(v.size, v.colorName, v.styleName, v.materialName) }
+          ? {
+              ...v,
+              sku: buildSku({
+                categoryName: skuContextRef.current.categoryName,
+                productName: skuContextRef.current.productName,
+                size: v.size,
+                colorName: v.colorName,
+                styleName: v.styleName,
+                materialName: v.materialName,
+              }),
+            }
           : v
       )
     );

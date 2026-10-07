@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import type { ProductColor, ProductVariant } from "../types";
 import { DEFAULT_VARIANT_STOCK } from "../types";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 import { toast } from "@/lib/toast";
 import { getColorPreviewStyle } from "../utils/color-helper";
 
@@ -108,7 +109,7 @@ export function VariantMatrix({
                         )}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept={ACCEPT_IMAGE_TYPES}
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];

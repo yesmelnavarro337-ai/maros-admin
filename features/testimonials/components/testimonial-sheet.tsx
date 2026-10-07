@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { StarRating } from "./star-rating";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES, isHeicFile } from "@/lib/utils/image-file";
 import type { Testimonial, TestimonialStatus } from "../types";
 
 interface TestimonialSheetProps {
@@ -86,8 +87,12 @@ export function TestimonialSheet({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!["image/jpeg", "image/png", "image/jpg", "image/webp"].includes(file.type)) {
-      toast.error("Formato no soportado. Solo se permiten imágenes JPG o PNG.");
+    const isAllowed =
+      ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/heic", "image/heif"].includes(file.type) ||
+      isHeicFile(file);
+
+    if (!isAllowed) {
+      toast.error("Formato no soportado. Se permiten JPG, PNG, WEBP o HEIC/HEIF.");
       return;
     }
 
@@ -283,7 +288,7 @@ export function TestimonialSheet({
                 <input
                   id="avatar-upload"
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={ACCEPT_IMAGE_TYPES}
                   onChange={handleImageUpload}
                   disabled={uploading}
                   className="hidden"

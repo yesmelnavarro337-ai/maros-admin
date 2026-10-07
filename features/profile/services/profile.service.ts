@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client-fetcher";
+import { normalizeImageFile } from "@/lib/utils/image-file";
 
 export interface UserProfile {
   id: string;
@@ -89,8 +90,9 @@ export async function verifyEmailChange(
 }
 
 export async function uploadAvatar(file: File): Promise<UserProfile> {
+  const processedFile = await normalizeImageFile(file);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", processedFile);
   return apiFetch<UserProfile>("Profile/avatar", {
     method: "POST",
     body: formData,

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Loader2, Star, Trash2, Upload } from "lucide-react";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 import { toast } from "@/lib/toast";
 
 export interface GalleryImageItem {
@@ -29,7 +30,7 @@ export function ImageGalleryUploader({
   value,
   onChange,
   folder = "general",
-  maxItems = 8,
+  maxItems,
   hint,
 }: ImageGalleryUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +61,8 @@ export function ImageGalleryUploader({
     const selected = Array.from(files ?? []);
     if (selected.length === 0) return;
 
-    const room = maxItems - value.length;
+    // Sin límite por defecto: solo se recorta si el consumidor fija maxItems.
+    const room = maxItems !== undefined ? maxItems - value.length : selected.length;
     if (room <= 0) {
       toast.error(`Puedes subir hasta ${maxItems} imágenes.`);
       return;
@@ -169,7 +171,7 @@ export function ImageGalleryUploader({
           </div>
         ))}
 
-        {value.length < maxItems && (
+        {(maxItems === undefined || value.length < maxItems) && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -193,7 +195,7 @@ export function ImageGalleryUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={ACCEPT_IMAGE_TYPES}
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}

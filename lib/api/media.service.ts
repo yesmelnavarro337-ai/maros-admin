@@ -1,11 +1,14 @@
+import { normalizeImageFile } from "@/lib/utils/image-file";
+
 export interface MediaUploadResult {
   url: string;
   publicId: string;
 }
 
 export async function uploadImage(file: File, folder: string): Promise<MediaUploadResult> {
+  const processedFile = await normalizeImageFile(file);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", processedFile);
   formData.append("folder", folder);
 
   const response = await fetch("/api/proxy/Media/upload", {

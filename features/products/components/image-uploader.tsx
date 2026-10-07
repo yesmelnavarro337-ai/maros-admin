@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Plus, X, ImageOff, Loader2 } from "lucide-react";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 import { toast } from "@/lib/toast";
 
 interface ImageUploaderProps {
@@ -11,13 +12,16 @@ interface ImageUploaderProps {
   max?: number;
 }
 
-export function ImageUploader({ images, onChange, max = 6 }: ImageUploaderProps) {
+export function ImageUploader({ images, onChange, max }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   async function handleFiles(files: FileList | null) {
     if (!files) return;
-    const toUpload = Array.from(files).slice(0, max - images.length);
+    // Sin límite por defecto: se suben todas las imágenes seleccionadas.
+    const toUpload = max !== undefined
+      ? Array.from(files).slice(0, Math.max(0, max - images.length))
+      : Array.from(files);
     if (toUpload.length === 0) return;
 
     setUploading(true);
@@ -50,7 +54,7 @@ export function ImageUploader({ images, onChange, max = 6 }: ImageUploaderProps)
           </button>
         </div>
       ))}
-      {images.length < max && (
+      {(max === undefined || images.length < max) && (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -70,7 +74,7 @@ export function ImageUploader({ images, onChange, max = 6 }: ImageUploaderProps)
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={ACCEPT_IMAGE_TYPES}
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}

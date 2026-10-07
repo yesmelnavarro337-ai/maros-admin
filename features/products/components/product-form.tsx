@@ -170,7 +170,9 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     initialData?.styles ?? [],
     initialData?.materials ?? [],
     basePrice,
-    sizeLineMode
+    sizeLineMode,
+    // Contexto para el motor de SKUs determinista: [CAT]-[PROD]-[EST]-[COL]-[TAL]
+    { categoryName: selectedCategoryNames[0], productName: name }
   );
 
   /**

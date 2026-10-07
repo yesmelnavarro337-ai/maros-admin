@@ -1,4 +1,5 @@
 import type { GalleryImage, GalleryCategory } from "../types";
+import { normalizeImageFile } from "@/lib/utils/image-file";
 
 interface PagedResult<T> {
   items: T[];
@@ -48,8 +49,9 @@ export async function getGalleryImages(category?: GalleryCategory): Promise<Gall
 }
 
 export async function addGalleryImage(file: File, category: GalleryCategory, caption: string): Promise<GalleryImage> {
+  const processedFile = await normalizeImageFile(file);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", processedFile);
   formData.append("category", CATEGORY_TO_API[category]);
   formData.append("caption", caption);
 

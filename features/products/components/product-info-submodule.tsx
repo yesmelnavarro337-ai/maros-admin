@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 import type { Category } from "@/features/categories/types";
 import type { Collection } from "@/features/collections/types";
 import type { CategoryPriceEntry, ProductColor, ProductImageItem, ProductStatus } from "../types";
@@ -774,7 +775,7 @@ export function ProductInfoSubmodule({
                 id="product-images-dropzone"
                 type="file"
                 multiple
-                accept="image/jpeg,image/png,image/webp"
+                accept={ACCEPT_IMAGE_TYPES}
                 onChange={handleUploadImage}
                 disabled={uploading}
                 className="hidden"
@@ -956,7 +957,7 @@ export function ProductInfoSubmodule({
                     id="product-images-add-more"
                     type="file"
                     multiple
-                    accept="image/jpeg,image/png,image/webp"
+                    accept={ACCEPT_IMAGE_TYPES}
                     onChange={handleUploadImage}
                     disabled={uploading}
                     className="hidden"

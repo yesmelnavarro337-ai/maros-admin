@@ -45,6 +45,7 @@ import {
   type UserActivityLog,
 } from "@/features/profile/services/profile.service";
 import { VerificationCodeDialog } from "@/features/profile/components/verification-code-dialog";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 
 export function ProfileView() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -295,7 +296,7 @@ export function ProfileView() {
         type="file"
         ref={fileInputRef}
         className="hidden"
-        accept="image/*"
+        accept={ACCEPT_IMAGE_TYPES}
         onChange={handleAvatarFileChange}
       />
 

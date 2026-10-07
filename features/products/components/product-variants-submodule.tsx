@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Plus, Search, Trash2, Pencil, Sparkles, Image as ImageIcon, PackageCheck, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +109,22 @@ export function ProductVariantsSubmodule({
     }
     return true;
   });
+
+  // Matriz virtualizada: con cientos de variantes solo se montan en el DOM
+  // las filas visibles en el viewport, manteniendo fluida la edición de SKUs.
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredVariants.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 53,
+    overscan: 8,
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+      : 0;
 
   const activeSelectedVariant =
     variants.find((v) => v.id === selectedVariantId) || variants[0] || null;
@@ -346,10 +363,11 @@ export function ProductVariantsSubmodule({
               </p>
             </div>
 
-            {/* Tabla */}
+            {/* Tabla virtualizada: solo se montan en el DOM las filas visibles */}
             <div className="rounded-lg border border-[#EBE9DF] overflow-hidden">
+              <div ref={tableContainerRef} className="max-h-[560px] overflow-y-auto">
               <Table>
-                <TableHeader className="bg-[#FAF9F5]">
+                <TableHeader className="bg-[#FAF9F5] sticky top-0 z-10 shadow-[0_1px_0_0_#EBE9DF]">
                   <TableRow className="border-[#EBE9DF]">
                     <TableHead className="w-[140px] text-xs font-semibold text-[#34351f]">Color</TableHead>
                     <TableHead className="text-xs font-semibold text-[#34351f]">Talla</TableHead>
@@ -368,7 +386,14 @@ export function ProductVariantsSubmodule({
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredVariants.map((v) => {
+                    <>
+                      {paddingTop > 0 && (
+                        <tr aria-hidden="true">
+                          <td colSpan={7} style={{ height: paddingTop, padding: 0, border: 0 }} />
+                        </tr>
+                      )}
+                      {virtualItems.map((virtualRow) => {
+                      const v = filteredVariants[virtualRow.index];
                       const isSelected = activeSelectedVariant?.id === v.id;
                       const isAvailable = v.isAvailable ?? true;
                       const hasStock = v.stock > 0;
@@ -376,6 +401,8 @@ export function ProductVariantsSubmodule({
                       return (
                         <TableRow
                           key={v.id}
+                          data-index={virtualRow.index}
+                          ref={rowVirtualizer.measureElement}
                           onClick={() => setSelectedVariantId(v.id)}
                           className={`cursor-pointer transition-colors ${
                             isSelected ? "bg-[#555829]/10 font-medium" : "hover:bg-[#FAF9F5]"
@@ -520,10 +547,17 @@ export function ProductVariantsSubmodule({
                           </TableCell>
                         </TableRow>
                       );
-                    })
+                      })}
+                      {paddingBottom > 0 && (
+                        <tr aria-hidden="true">
+                          <td colSpan={7} style={{ height: paddingBottom, padding: 0, border: 0 }} />
+                        </tr>
+                      )}
+                    </>
                   )}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ImageOff, Upload, Loader2 } from "lucide-react";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 import { toast } from "@/lib/toast";
 
 interface SingleImageUploaderProps {
@@ -75,7 +76,7 @@ export function SingleImageUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={ACCEPT_IMAGE_TYPES}
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0])}
       />

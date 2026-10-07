@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { GALLERY_CATEGORIES } from "../types";
 import type { GalleryCategory } from "../types";
+import { ACCEPT_IMAGE_TYPES, normalizeImageFile } from "@/lib/utils/image-file";
 
 interface GalleryUploadDialogProps {
   open: boolean;
@@ -36,10 +37,13 @@ export function GalleryUploadDialog({ open, onOpenChange, onSave }: GalleryUploa
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  function handleFileSelect(selected: File | undefined) {
+  async function handleFileSelect(selected: File | undefined) {
     if (!selected) return;
-    setFile(selected);
-    setPreviewUrl(URL.createObjectURL(selected));
+    // Normaliza HEIC/HEIF de iPhone a JPEG: así la vista previa también
+    // funciona en navegadores que no renderizan HEIC de forma nativa.
+    const processed = await normalizeImageFile(selected);
+    setFile(processed);
+    setPreviewUrl(URL.createObjectURL(processed));
   }
 
   function reset() {
@@ -95,7 +99,7 @@ export function GalleryUploadDialog({ open, onOpenChange, onSave }: GalleryUploa
             <input
               ref={inputRef}
               type="file"
-              accept="image/*"
+              accept={ACCEPT_IMAGE_TYPES}
               className="hidden"
               onChange={(e) => handleFileSelect(e.target.files?.[0])}
             />

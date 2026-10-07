@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { uploadImage } from "@/lib/api/media.service";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/utils/image-file";
 
 interface ProductSeoSubmoduleProps {
   seoTitle: string;
@@ -209,7 +210,7 @@ export function ProductSeoSubmodule({
                   </div>
                   <input
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept={ACCEPT_IMAGE_TYPES}
                     onChange={handleUploadOgImage}
                     disabled={uploadingOg}
                     className="hidden"
