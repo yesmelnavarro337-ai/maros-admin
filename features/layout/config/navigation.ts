@@ -16,6 +16,7 @@ import {
   Home,
   Settings,
   UserCog,
+  Star,
   type LucideIcon,
   HelpCircle,
   Mail,
@@ -30,6 +31,7 @@ export interface NavItem {
 export const adminNavItems: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Productos", href: "/admin/productos", icon: ShoppingBag },
+  { label: "Destacados Catálogo", href: "/admin/productos/destacados-catalogo", icon: Star },
   { label: "Categorías", href: "/admin/categorias", icon: Tags },
   { label: "Colecciones", href: "/admin/colecciones", icon: Layers },
   { label: "Temporadas", href: "/admin/temporadas", icon: CalendarRange },

@@ -73,6 +73,32 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
         `[Proxy Error] ${method} /api/${joinedPath} responded with HTTP ${backendResponse.status}:`,
         errorText
       );
+
+      // Normalizar el error a un JSON con `message` garantizado para que el
+      // cliente (console/toast) pueda ver la causa exacta: el backend puede
+      // devolver ApiErrorResponse {message, errors}, ProblemDetails
+      // {title, detail} o texto plano (p.ej. "Request body too large" de Kestrel).
+      let normalized: Record<string, unknown>;
+      try {
+        const parsed: unknown = JSON.parse(errorText);
+        normalized =
+          parsed && typeof parsed === "object"
+            ? { ...(parsed as Record<string, unknown>) }
+            : { value: parsed };
+      } catch {
+        normalized = { raw: errorText };
+      }
+
+      if (typeof normalized.message !== "string" || !normalized.message) {
+        const candidates = [normalized.detail, normalized.title, normalized.error, normalized.raw];
+        const fallback =
+          candidates.find((c): c is string => typeof c === "string" && c.trim().length > 0) ??
+          `HTTP ${backendResponse.status} del servidor backend`;
+        normalized.message = fallback.slice(0, 1000);
+      }
+      normalized.status = normalized.status ?? backendResponse.status;
+
+      return NextResponse.json(normalized, { status: backendResponse.status });
     }
 
     const responseHeaders = new Headers();

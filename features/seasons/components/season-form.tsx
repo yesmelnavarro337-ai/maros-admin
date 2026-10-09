@@ -324,12 +324,12 @@ const [isVisibleStore, setIsVisibleStore] = useState(initialData?.isVisibleStore
 
         {/* Right Column (Media & Config - 1 col) */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Card: Galería de imágenes */}
+          {/* Card: Galería de multimedia */}
           <div className="bg-card border border-border/60 rounded-xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-border/40">
               <Images className="h-4 w-4 text-[#555A2B]" />
               <h2 className="font-serif text-lg font-semibold text-[#1C1917]">
-                Imágenes de la temporada
+                Multimedia de la temporada
               </h2>
             </div>
 
@@ -339,7 +339,8 @@ const [isVisibleStore, setIsVisibleStore] = useState(initialData?.isVisibleStore
               onChange={setImages}
               folder="seasons"
               maxItems={8}
-              hint="La portada es la primera diapositiva del hero; las demás se muestran en el orden de la lista."
+              allowVideo
+              hint="Sube imágenes (JPG, PNG, WebP) o videos (MP4, WebM, MOV). La portada es la primera diapositiva del hero; las demás se muestran en el orden de la lista."
             />
           </div>
 

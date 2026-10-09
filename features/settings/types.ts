@@ -119,7 +119,8 @@ export type SettingsSectionKey =
   | "legal"
   | "domain"
   | "backups"
-  | "security";
+  | "security"
+  | "audio";
 
 export interface SettingsSectionOption {
   key: SettingsSectionKey;
@@ -139,4 +140,5 @@ export const SETTINGS_SECTIONS: SettingsSectionOption[] = [
   { key: "domain", slug: "dominio", label: "Dominio", description: "Configuración de dominio, DNS y SSL" },
   { key: "backups", slug: "copias-seguridad", label: "Copias de Seguridad", description: "Respaldos automáticos y restauración de BD" },
   { key: "security", slug: "seguridad", label: "Seguridad", description: "2FA, bloqueos, sesiones activas y seguridad" },
+  { key: "audio", slug: "audio", label: "Audio ambiental", description: "Audios instrumentales MP3 de la tienda" },
 ];

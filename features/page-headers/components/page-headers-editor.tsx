@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SingleImageUploader } from "@/components/shared/single-image-uploader";
+import { HeaderMediaManager } from "@/components/shared/header-media-manager";
 import { toast } from "@/lib/toast";
 import {
   PAGE_KEYS,
   PAGE_LABELS,
   defaultPageHeader,
+  type HeaderMedia,
   type PageHeaderData,
   type PageKey,
 } from "../types";
@@ -52,6 +54,44 @@ export function PageHeadersEditor() {
     },
     []
   );
+
+  /** Lista mostrada en el gestor: la imagen de fondo va primero salvo que el admin la haya reordenado. */
+  function buildDisplayMedia(key: PageKey): HeaderMedia[] {
+    const anchor = headers![key].backgroundImage?.trim() || undefined;
+    const list = (headers![key].media ?? []).filter((m) => Boolean(m.url?.trim()));
+    if (!anchor || list.some((m) => m.url === anchor)) {
+      return list.map((m, i) => ({ ...m, order: i }));
+    }
+    return [
+      { url: anchor, mediaType: "image", order: 0 },
+      ...list.map((m, i) => ({ ...m, order: i + 1 })),
+    ];
+  }
+
+  /**
+   * Reglas de persistencia del orden:
+   * - La imagen de fondo sigue en la posición 0 → no se guarda dentro de `media`
+   *   (el sitio la re-inyecta sola al frente).
+   * - Se movió a otra posición → se guarda dentro de `media` para respetar ese orden.
+   * - Se quitó del gestor → se limpia `backgroundImage`.
+   */
+  function handleMediaChange(key: PageKey, list: HeaderMedia[]) {
+    const anchor = headers![key].backgroundImage?.trim() || undefined;
+    const index = anchor ? list.findIndex((m) => m.url === anchor) : -1;
+    const keepAnchorField = !(anchor && index === -1);
+    const media = (anchor && index === 0 ? list.slice(1) : list).map((m, i) => ({ ...m, order: i }));
+    setHeaders((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          media,
+          backgroundImage: keepAnchorField ? prev[key].backgroundImage : undefined,
+        },
+      };
+    });
+  }
 
   async function handleSave() {
     if (!headers) return;
@@ -102,6 +142,13 @@ export function PageHeadersEditor() {
                 value={headers[key].backgroundImage}
                 onChange={(img) => updateField(key, "backgroundImage", img)}
                 folder="page-headers"
+              />
+
+              <HeaderMediaManager
+                media={buildDisplayMedia(key)}
+                onChange={(media) => handleMediaChange(key, media)}
+                folder="page-headers"
+                anchorUrl={headers[key].backgroundImage?.trim() || undefined}
               />
 
               <div className="rounded-md border border-border p-4 flex flex-col gap-3">

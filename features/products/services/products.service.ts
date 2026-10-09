@@ -473,3 +473,26 @@ export async function updateProductStatus(id: string, status: ProductStatus): Pr
   if (!product) return undefined;
   return updateProduct(id, { ...toSavePayload(product), status });
 }
+
+export interface FeaturedCatalogSelection {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: number;
+  imageUrl?: string | null;
+  catalogOrder?: number | null;
+}
+
+export async function getFeaturedCatalogSelection(): Promise<FeaturedCatalogSelection[]> {
+  return apiFetch<FeaturedCatalogSelection[]>("Products/featured-catalog");
+}
+
+export async function saveFeaturedCatalog(productIds: string[]): Promise<FeaturedCatalogSelection[]> {
+  const updated = await apiFetch<FeaturedCatalogSelection[]>("Products/featured-catalog", {
+    method: "PUT",
+    body: { productIds },
+  });
+  revalidateWeb({ tag: "featured-catalog" });
+  revalidateWeb({ path: "/catalogo" });
+  return updated;
+}

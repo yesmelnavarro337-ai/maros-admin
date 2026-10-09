@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { deleteSeason } from "../services/seasons.service";
+import { isVideoUrl } from "@/lib/utils/image-file";
 import { toast } from "@/lib/toast";
 import type { Season, SeasonStatus } from "../types";
 
@@ -197,8 +198,18 @@ export function SeasonDetail({ season }: { season: Season }) {
 
             <div className="w-full aspect-[16/11] rounded-lg overflow-hidden border border-border/60 bg-[#FAF9F5] flex items-center justify-center relative">
               {cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={cover} alt={season.name} className="w-full h-full object-cover" />
+                isVideoUrl(cover) ? (
+                  <video
+                    src={cover}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={cover} alt={season.name} className="w-full h-full object-cover" />
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
                   <ImageOff className="h-8 w-8 mb-2 text-[#555A2B] opacity-40" />

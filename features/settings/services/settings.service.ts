@@ -262,3 +262,25 @@ export async function createBackupNow(): Promise<{ message: string; lastBackupDa
     method: "POST",
   });
 }
+
+export interface AudioSettings {
+  navidad: string | null;
+  nosotros: string | null;
+}
+
+export async function getAudioSettings(): Promise<AudioSettings> {
+  return await apiFetch<AudioSettings>("Settings/audio");
+}
+
+export async function uploadAudioSettings(
+  type: "navidad" | "nosotros",
+  file: File,
+): Promise<{ message?: string } & AudioSettings> {
+  const form = new FormData();
+  form.append("type", type);
+  form.append("file", file);
+  return await apiFetch<{ message?: string } & AudioSettings>("Settings/audio", {
+    method: "POST",
+    body: form,
+  });
+}

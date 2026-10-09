@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/features/products/services/products.service";
+import { isVideoUrl } from "@/lib/utils/image-file";
 import type { Product } from "@/features/products/types";
 import type { Season } from "../types";
 
@@ -45,14 +46,23 @@ export function SeasonPreviewModal({ season }: { season: Season }) {
             className="relative aspect-[21/9] flex flex-col items-center justify-center text-center px-6"
             style={{ backgroundColor: season.colors.primary }}
           >
-            {season.heroImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={season.heroImage}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-40"
-              />
-            )}
+            {season.heroImage &&
+              (isVideoUrl(season.heroImage) ? (
+                <video
+                  src={season.heroImage}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover opacity-40"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={season.heroImage}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover opacity-40"
+                />
+              ))}
             <div className="relative z-10">
               <h2 className="font-heading text-2xl sm:text-3xl text-white">{season.heroTitle}</h2>
               <p className="text-sm text-white/85 mt-2">{season.heroSubtitle}</p>
@@ -66,12 +76,23 @@ export function SeasonPreviewModal({ season }: { season: Season }) {
           </div>
 
           {/* Banner */}
-          {season.bannerImage && (
-            <div className="aspect-[4/1]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={season.bannerImage} alt="" className="w-full h-full object-cover" />
-            </div>
-          )}
+          {season.bannerImage &&
+            (isVideoUrl(season.bannerImage) ? (
+              <div className="aspect-[4/1]">
+                <video
+                  src={season.bannerImage}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="aspect-[4/1]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={season.bannerImage} alt="" className="w-full h-full object-cover" />
+              </div>
+            ))}
 
           {/* Productos destacados */}
           <div className="p-6">

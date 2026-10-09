@@ -17,6 +17,7 @@ import { SettingsLegalPanel } from "./settings-legal-panel";
 import { SettingsDomainPanel } from "./settings-domain-panel";
 import { SettingsBackupsPanel } from "./settings-backups-panel";
 import { SettingsSecurityPanel } from "./settings-security-panel";
+import { SettingsAudioPanel } from "./settings-audio-panel";
 import { SETTINGS_SECTIONS } from "../types";
 import type { SettingsSectionKey, SiteSettings } from "../types";
 
@@ -31,6 +32,7 @@ const SLUG_TO_KEY: Record<string, SettingsSectionKey> = {
   dominio: "domain",
   "copias-seguridad": "backups",
   seguridad: "security",
+  audio: "audio",
 };
 
 interface SettingsShellProps {
@@ -173,6 +175,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
           {active === "security" && (
             <SettingsSecurityPanel value={settings.security} onChange={(v) => setSettings({ ...settings, security: v })} />
           )}
+          {active === "audio" && <SettingsAudioPanel />}
 
           {/* Footer de Acciones */}
           <div className="flex justify-end items-center gap-3 mt-8 pt-5 border-t border-border/80">

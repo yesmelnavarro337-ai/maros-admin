@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/lib/toast";
 import { getSeasons, activateSeason, deleteSeason } from "../services/seasons.service";
+import { isVideoUrl } from "@/lib/utils/image-file";
 import type { Season, SeasonStatus } from "../types";
 
 export function SeasonsTimeline() {
@@ -223,8 +224,18 @@ export function SeasonsTimeline() {
                   {/* Banner / Cover Thumbnail */}
                   <div className="w-full md:w-48 aspect-[16/10] rounded-lg overflow-hidden bg-[#FAF9F5] border border-border/40 shrink-0 relative flex items-center justify-center">
                     {cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={cover} alt={season.name} className="w-full h-full object-cover" />
+                      isVideoUrl(cover) ? (
+                        <video
+                          src={cover}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={cover} alt={season.name} className="w-full h-full object-cover" />
+                      )
                     ) : (
                       <div className="flex flex-col items-center justify-center text-muted-foreground p-3">
                         <ImageOff className="h-6 w-6 mb-1 text-[#555A2B] opacity-50" />

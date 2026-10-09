@@ -19,7 +19,9 @@ export async function uploadImage(file: File, folder: string): Promise<MediaUplo
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.message ?? "No se pudo subir la imagen.");
+    throw new Error(
+      body?.message ?? body?.detail ?? body?.title ?? "No se pudo subir la imagen."
+    );
   }
 
   return response.json();

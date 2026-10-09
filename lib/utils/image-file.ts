@@ -6,6 +6,34 @@ export const ACCEPT_IMAGE_TYPES =
   "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif";
 
 /**
+ * Tipos MIME y extensiones aceptadas para carga de videos (compatible con la
+ * lista de extensiones del backend MediaController).
+ */
+export const ACCEPT_VIDEO_TYPES =
+  "video/mp4,video/webm,video/quicktime,video/mov,video/m4v,.mp4,.webm,.mov,.MOV,.m4v";
+
+/**
+ * Detecta si un archivo subido corresponde a un video según su MIME o extensión.
+ */
+export function detectMediaType(file: File): "image" | "video" {
+  const isVideoMime = file.type.startsWith("video/");
+  const isVideoExtension = /\.(mp4|webm|mov|m4v|avi|mkv|quicktime)$/i.test(file.name);
+  return isVideoMime || isVideoExtension ? "video" : "image";
+}
+
+/**
+ * Detecta si una URL de Cloudinary (o externa) apunta a un video. Las URLs de
+ * Cloudinary siempre incluyen el resource type en la ruta (`/video/upload/`).
+ */
+export function isVideoUrl(url: string): boolean {
+  const lower = (url || "").toLowerCase();
+  return (
+    lower.includes("/video/upload/") ||
+    /\.(mp4|webm|mov|m4v|avi|mkv)(\?|#|$)/.test(lower)
+  );
+}
+
+/**
  * Detecta si un archivo corresponde al formato HEIC o HEIF de Apple.
  */
 export function isHeicFile(file: File): boolean {

@@ -37,6 +37,12 @@ const DEFAULT_CONTENT: Record<PageKey, { title: string; subtitle: string }> = {
   },
 };
 
+export interface HeaderMedia {
+  url: string;
+  mediaType: "image" | "video";
+  order: number;
+}
+
 export interface PageHeaderData {
   pageKey: PageKey;
   title: string;
@@ -48,6 +54,7 @@ export interface PageHeaderData {
   secondaryButtonLink?: string;
   textColor: string;
   overlayOpacity: number;
+  media: HeaderMedia[];
 }
 
 export function defaultPageHeader(pageKey: PageKey): PageHeaderData {
@@ -57,5 +64,6 @@ export function defaultPageHeader(pageKey: PageKey): PageHeaderData {
     subtitle: DEFAULT_CONTENT[pageKey].subtitle,
     textColor: DEFAULT_TEXT_COLOR,
     overlayOpacity: DEFAULT_OVERLAY_OPACITY,
+    media: [],
   };
 }
