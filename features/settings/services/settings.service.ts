@@ -263,6 +263,25 @@ export async function createBackupNow(): Promise<{ message: string; lastBackupDa
   });
 }
 
+export interface AIAssistantStatus {
+  enabled: boolean;
+  model: string | null;
+}
+
+/**
+ * Estado del asistente de personalización con IA (Gemini). Consulta el endpoint
+ * público del backend; el modelo solo viene informado cuando está habilitado.
+ */
+export async function getAIAssistantStatus(): Promise<AIAssistantStatus> {
+  const raw = await apiFetch<{ enabled?: boolean; model?: string | null }>(
+    "public/customization/assistant"
+  );
+  return {
+    enabled: Boolean(raw?.enabled),
+    model: raw?.model ?? null,
+  };
+}
+
 export interface AudioSettings {
   navidad: string | null;
   nosotros: string | null;

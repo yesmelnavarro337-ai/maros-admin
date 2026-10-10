@@ -9,10 +9,13 @@ interface ApiCustomizationOption {
   id: string;
   catalogType: string;
   name: string;
+  description?: string | null;
+  category?: string | null;
   imageUrl?: string | null;
   colorHex?: string | null;
   priceModifier?: number | null;
   active: boolean;
+  assignedOptionIds?: string[] | null;
 }
 
 const CATALOG_TO_API: Record<SpecificCatalogKey, string> = {
@@ -44,10 +47,13 @@ function adaptItem(o: ApiCustomizationOption): CatalogItem {
     id: o.id,
     catalog: cat,
     name: o.name,
+    description: o.description ?? undefined,
+    category: o.category ?? undefined,
     image: o.imageUrl ?? undefined,
     hex: o.colorHex ?? undefined,
     priceModifier: o.priceModifier ?? undefined,
     active: o.active,
+    assignedOptionIds: o.assignedOptionIds ?? [],
   };
 }
 
@@ -98,9 +104,12 @@ export async function createCatalogItem(
     body: {
       catalogType: CATALOG_TO_API[data.catalog],
       name: data.name,
+      description: data.description ?? null,
+      category: data.category ?? null,
       imageUrl: data.image ?? null,
       colorHex: data.hex ?? null,
       priceModifier: data.priceModifier ?? null,
+      assignedOptionIds: data.assignedOptionIds ?? [],
     },
   });
   cachedCatalogs = null;
@@ -115,10 +124,13 @@ export async function updateCatalogItem(
     method: "PUT",
     body: {
       name: data.name,
+      description: data.description ?? null,
+      category: data.category ?? null,
       imageUrl: data.image ?? null,
       colorHex: data.hex ?? null,
       priceModifier: data.priceModifier ?? null,
       active: data.active ?? true,
+      assignedOptionIds: data.assignedOptionIds ?? [],
     },
   });
   cachedCatalogs = null;

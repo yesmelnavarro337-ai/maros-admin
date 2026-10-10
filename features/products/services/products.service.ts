@@ -69,6 +69,7 @@ interface ApiProduct {
   status: string;
   featuredHome: boolean;
   allowCustomization: boolean;
+  customizationModelId?: string | null;
   deliveryTime: string;
   seoTitle: string;
   seoDescription: string;
@@ -264,6 +265,7 @@ function adaptProduct(p: ApiProduct): Product {
     ],
     featuredHome: p.featuredHome,
     allowCustomization: p.allowCustomization,
+    customizationModelId: p.customizationModelId ?? null,
     deliveryTime: p.deliveryTime,
     seo: {
       title: p.seoTitle,
@@ -285,6 +287,7 @@ export interface SaveProductPayload {
   status: ProductStatus;
   featuredHome: boolean;
   allowCustomization: boolean;
+  customizationModelId?: string | null;
   deliveryTime: string;
   seo: { title: string; description: string; socialImage?: string; altText?: string };
   images: string[];
@@ -330,6 +333,7 @@ function buildApiPayload(data: SaveProductPayload) {
     status: statusToApi(data.status),
     featuredHome: data.featuredHome,
     allowCustomization: data.allowCustomization,
+    customizationModelId: data.customizationModelId && isValidGuid(data.customizationModelId) ? data.customizationModelId : null,
     deliveryTime: data.deliveryTime,
     seoTitle: data.seo.title,
     seoDescription: data.seo.description,
@@ -438,6 +442,7 @@ export function toSavePayload(product: Product): SaveProductPayload {
     status: product.status,
     featuredHome: product.featuredHome,
     allowCustomization: product.allowCustomization,
+    customizationModelId: product.customizationModelId ?? null,
     deliveryTime: product.deliveryTime,
     seo: {
       title: product.seo.title ?? "",

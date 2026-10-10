@@ -14,6 +14,8 @@ import type { Collection } from "@/features/collections/types";
 import { useVariantMatrix } from "../hooks/use-variant-matrix";
 import { createProduct, updateProduct, deleteProduct } from "../services/products.service";
 import { getStyles, styleNamesToIds, type StyleOption } from "../services/styles.service";
+import { getCatalogItems } from "@/features/customization/services/customization.service";
+import type { CatalogItem } from "@/features/customization/types";
 import { ProductInfoSubmodule } from "./product-info-submodule";
 import { ProductVariantsSubmodule } from "./product-variants-submodule";
 import { ProductCollectionSubmodule } from "./product-collection-submodule";
@@ -102,6 +104,10 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
   // Config State
   const [featuredHome, setFeaturedHome] = useState(initialData?.featuredHome ?? false);
   const [allowCustomization, setAllowCustomization] = useState(initialData?.allowCustomization ?? true);
+  const [customizationModelId, setCustomizationModelId] = useState<string>(
+    initialData?.customizationModelId ?? ""
+  );
+  const [customizationModels, setCustomizationModels] = useState<CatalogItem[]>([]);
   const [visibility, setVisibility] = useState<ProductVisibility>(initialData?.visibility ?? "publico");
   const [trackInventory, setTrackInventory] = useState(initialData?.trackInventory ?? true);
   const [deliveryTime, setDeliveryTime] = useState<string>(
@@ -263,6 +269,20 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    getCatalogItems("modelos")
+      .then((items) => {
+        if (mounted) setCustomizationModels(items.filter((m) => m.active ?? true));
+      })
+      .catch(() => {
+        if (mounted) setCustomizationModels([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -292,6 +312,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
         status,
         featuredHome,
         allowCustomization,
+        customizationModelId: customizationModelId || null,
         deliveryTime,
         seo: {
           title: seoTitle.trim() || name.trim(),
@@ -582,6 +603,9 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             setShippingMethod={setShippingMethod}
             warrantyPeriod={warrantyPeriod}
             setWarrantyPeriod={setWarrantyPeriod}
+            customizationModelId={customizationModelId}
+            setCustomizationModelId={setCustomizationModelId}
+            customizationModels={customizationModels}
           />
         </TabsContent>
 

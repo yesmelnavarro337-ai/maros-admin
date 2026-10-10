@@ -28,6 +28,9 @@ interface ProductConfigSubmoduleProps {
   setFeaturedHome: (val: boolean) => void;
   allowCustomization: boolean;
   setAllowCustomization: (val: boolean) => void;
+  customizationModelId: string;
+  setCustomizationModelId: (val: string) => void;
+  customizationModels: import("@/features/customization/types").CatalogItem[];
   visibility: ProductVisibility;
   setVisibility: (val: ProductVisibility) => void;
   trackInventory: boolean;
@@ -49,6 +52,9 @@ export function ProductConfigSubmodule({
   setFeaturedHome,
   allowCustomization,
   setAllowCustomization,
+  customizationModelId,
+  setCustomizationModelId,
+  customizationModels,
   visibility,
   setVisibility,
   trackInventory,
@@ -115,6 +121,32 @@ export function ProductConfigSubmodule({
               </div>
               <Switch checked={allowCustomization} onCheckedChange={setAllowCustomization} />
             </div>
+
+            {/* Selector modelo de personalización */}
+            {allowCustomization && (
+              <div className="space-y-1.5 pt-2">
+                <Label className="text-xs font-semibold text-[#34351f]">Modelo de personalización</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Determina las telas, colores, estampados y bordados disponibles en el personalizador.
+                </p>
+                <Select
+                  value={customizationModelId || "none"}
+                  onValueChange={(val) => setCustomizationModelId(val === "none" ? "" : val)}
+                >
+                  <SelectTrigger className="bg-white border-[#EBE9DF] focus:ring-[#555829]">
+                    <SelectValue placeholder="Sin modelo (todas las opciones)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin modelo (todas las opciones)</SelectItem>
+                    {customizationModels.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
 

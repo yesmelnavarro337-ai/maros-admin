@@ -347,6 +347,37 @@ export function ModeloEditForm({ modelItem }: ModeloEditFormProps) {
               </div>
             </div>
 
+            {/* Section: Bordados */}
+            <div className="space-y-2 pt-2 border-t border-border/40">
+              <Label className="text-xs font-medium text-[#555A2B] uppercase tracking-wide block">
+                Bordados Disponibles
+              </Label>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(catalogs?.bordados || []).length === 0 ? (
+                  <span className="text-xs text-muted-foreground">Sin bordados en catálogo</span>
+                ) : (
+                  (catalogs?.bordados || []).map((b) => {
+                    const isAssigned = assignedOptionIds.includes(b.id);
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => toggleOption(b.id)}
+                        className={`text-xs px-3 py-1.5 rounded-lg border font-medium flex items-center gap-1.5 transition-all ${
+                          isAssigned
+                            ? "bg-[#555A2B] text-white border-[#555A2B] shadow-2xs"
+                            : "bg-[#FAF9F5] text-foreground border-border/60 hover:bg-secondary"
+                        }`}
+                      >
+                        {isAssigned ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3 text-muted-foreground" />}
+                        {b.name}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             {/* Section: Tallas */}
             <div className="space-y-2 pt-2 border-t border-border/40">
               <Label className="text-xs font-medium text-[#555A2B] uppercase tracking-wide block">

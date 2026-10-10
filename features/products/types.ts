@@ -88,6 +88,7 @@ export interface Product {
   collectionIds: string[];
   featuredHome: boolean;
   allowCustomization: boolean;
+  customizationModelId?: string | null;
   deliveryTime: string;
   weightKg?: number;
   brand?: string;

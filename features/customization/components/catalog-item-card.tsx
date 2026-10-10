@@ -61,10 +61,17 @@ export function CatalogItemCard({ item, config, onEdit, onDelete }: CatalogItemC
 
           {/* Model Status Badge */}
           {isModel && (
-            <span className="absolute top-2 left-2 bg-[#E8F5E9] text-[#166534] text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#22C55E]" />
-              Activo
-            </span>
+            (item.active ?? true) ? (
+              <span className="absolute top-2 left-2 bg-[#E8F5E9] text-[#166534] text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#22C55E]" />
+                Activo
+              </span>
+            ) : (
+              <span className="absolute top-2 left-2 bg-gray-100 text-gray-600 text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                Inactivo
+              </span>
+            )
           )}
 
           {/* Quick Edit/Delete overlay */}
