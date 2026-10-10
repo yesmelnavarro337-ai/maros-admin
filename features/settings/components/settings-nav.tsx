@@ -15,7 +15,7 @@ import {
   Database,
   Lock,
   Music,
-  Sparkles,
+  // Sparkles, // DESACTIVADO (asistente IA)
 } from "lucide-react";
 
 interface SettingsNavProps {
@@ -35,7 +35,7 @@ const SECTION_ICONS: Record<SettingsSectionKey, React.ReactNode> = {
   backups: <Database className="h-4 w-4" />,
   security: <Lock className="h-4 w-4" />,
   audio: <Music className="h-4 w-4" />,
-  ai: <Sparkles className="h-4 w-4" />,
+  // ai: <Sparkles className="h-4 w-4" />, // DESACTIVADO (asistente IA)
 };
 
 export function SettingsNav({ active, onChange }: SettingsNavProps) {

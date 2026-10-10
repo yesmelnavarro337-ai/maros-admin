@@ -75,11 +75,11 @@ interface ApiSiteSettings {
 
 const DEFAULT_HOME_SECTIONS: HomeSection[] = [
   { id: "hero", label: "Hero principal", enabled: true, order: 1 },
-  { id: "active-season", label: "Colección / Temporada activa", enabled: true, order: 2 },
+  { id: "active-season", label: "ColecciÃ³n / Temporada activa", enabled: true, order: 2 },
   { id: "featured-products", label: "Productos destacados", enabled: true, order: 3 },
   { id: "testimonials", label: "Testimonios", enabled: true, order: 4 },
-  { id: "blog", label: "Últimos artículos del blog", enabled: false, order: 5 },
-  { id: "newsletter", label: "Suscripción por correo", enabled: false, order: 6 },
+  { id: "blog", label: "Ãšltimos artÃ­culos del blog", enabled: false, order: 5 },
+  { id: "newsletter", label: "SuscripciÃ³n por correo", enabled: false, order: 6 },
 ];
 
 function adaptSettings(s: ApiSiteSettings): SiteSettings {
@@ -89,7 +89,7 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
       description: s.description || "Tienda oficial de pijamas y ropa de descanso",
       currency: s.currency || "COP ($)",
       timezone: s.timezone || "America/Bogota (UTC-5)",
-      language: s.language || "Español (Colombia)",
+      language: s.language || "EspaÃ±ol (Colombia)",
       dateFormat: s.dateFormat || "DD/MM/YYYY",
       maintenanceMode: !!s.maintenanceMode,
       logo: s.logoUrl ?? undefined,
@@ -105,7 +105,7 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
     },
     whatsapp: {
       phoneNumber: s.whatsappNumber || "+573013169974",
-      defaultMessage: s.whatsappDefaultMessage || "¡Hola! Me gustaría cotizar pijamas al por mayor.",
+      defaultMessage: s.whatsappDefaultMessage || "Â¡Hola! Me gustarÃ­a cotizar pijamas al por mayor.",
       buttonImage: s.whatsappButtonImageUrl ?? undefined,
       position: s.whatsappPosition || "right",
       buttonEnabled: s.whatsappButtonEnabled !== false,
@@ -113,7 +113,7 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
     contact: {
       phone: s.contactPhone || "+57 301 316 9974",
       email: s.contactEmail || "contacto@marospijamas.com",
-      address: s.address || "Calle 10 # 43-12, Medellín, Colombia",
+      address: s.address || "Calle 10 # 43-12, MedellÃ­n, Colombia",
       businessHours: s.businessHours || "Lun - Vie: 8:00 AM - 6:00 PM",
       mapImage: s.mapImageUrl ?? undefined,
       showLocation: s.showLocation !== false,
@@ -121,14 +121,14 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
     email: {
       fromName: s.emailFromName || "Maros Pijamas",
       fromEmail: s.emailFromAddress || "ventas@marospijamas.com",
-      defaultSubject: s.defaultSubject || "Confirmación de solicitud de cotización",
+      defaultSubject: s.defaultSubject || "ConfirmaciÃ³n de solicitud de cotizaciÃ³n",
       autoReplyMessage: s.autoReplyMessage || "Gracias por escribirnos. Procesaremos tu solicitud en breve.",
       notifyNewQuotation: s.notifyNewQuotation !== false,
     },
     seo: {
       metaTitle: s.seoMetaTitle || "Maros Pijamas | Pijamas al por Mayor y Detal",
-      metaDescription: s.seoMetaDescription || "Fabricantes de pijamas en Colombia. Diseños exclusivos en satén y algodón.",
-      keywords: s.keywords || "pijamas, moda, satén, ropa de descanso, medellín",
+      metaDescription: s.seoMetaDescription || "Fabricantes de pijamas en Colombia. DiseÃ±os exclusivos en satÃ©n y algodÃ³n.",
+      keywords: s.keywords || "pijamas, moda, satÃ©n, ropa de descanso, medellÃ­n",
       canonicalUrl: s.canonicalUrl || "https://marospijamas.com",
       robotsTag: s.robotsTag || "index, follow",
       language: s.language || "es",
@@ -136,8 +136,8 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
     },
     legal: {
       privacyPolicy: s.legalPrivacyPolicy || "Aviso de Privacidad y Tratamiento de Datos Personales...",
-      termsAndConditions: s.legalTermsAndConditions || "Términos y Condiciones de Uso del sitio web...",
-      cookiesPolicy: s.legalCookiesPolicy || "Política de uso de cookies y almacenamiento local...",
+      termsAndConditions: s.legalTermsAndConditions || "TÃ©rminos y Condiciones de Uso del sitio web...",
+      cookiesPolicy: s.legalCookiesPolicy || "PolÃ­tica de uso de cookies y almacenamiento local...",
       termsUrl: s.legalTermsUrl || "/terminos",
       privacyUrl: s.legalPrivacyUrl || "/privacidad",
       returnsPolicy: s.legalReturnsPolicy || "/devoluciones",
@@ -152,7 +152,7 @@ function adaptSettings(s: ApiSiteSettings): SiteSettings {
       autoBackupEnabled: s.autoBackupEnabled !== false,
       frequency: s.backupFrequency || "diaria",
       executionTime: s.backupTime || "02:00 AM",
-      retentionDays: s.backupRetentionDays || "30 días",
+      retentionDays: s.backupRetentionDays || "30 dÃ­as",
       lastBackupDate: s.lastBackupDate ? s.lastBackupDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
       lastBackupSize: s.lastBackupSize || "24.5 MB",
     },
@@ -263,25 +263,27 @@ export async function createBackupNow(): Promise<{ message: string; lastBackupDa
   });
 }
 
-export interface AIAssistantStatus {
-  enabled: boolean;
-  model: string | null;
-}
-
-/**
- * Estado del asistente de personalización con IA (Gemini). Consulta el endpoint
- * público del backend; el modelo solo viene informado cuando está habilitado.
- */
-export async function getAIAssistantStatus(): Promise<AIAssistantStatus> {
-  const raw = await apiFetch<{ enabled?: boolean; model?: string | null }>(
-    "public/customization/assistant"
-  );
-  return {
-    enabled: Boolean(raw?.enabled),
-    model: raw?.model ?? null,
-  };
-}
-
+// - Asistente IA (Gemini) - DESACTIVADO (comentado temporalmente) -
+// Reactivar: quitar el prefijo `// ` de las lineas siguientes.
+// export interface AIAssistantStatus {
+//   enabled: boolean;
+//   model: string | null;
+// }
+//
+// /**
+//  * Estado del asistente de personalizaci-n con IA (Gemini). Consulta el endpoint
+//  * p-blico del backend; el modelo solo viene informado cuando est- habilitado.
+//  */
+// export async function getAIAssistantStatus(): Promise<AIAssistantStatus> {
+//   const raw = await apiFetch<{ enabled?: boolean; model?: string | null }>(
+//     "public/customization/assistant"
+//   );
+//   return {
+//     enabled: Boolean(raw?.enabled),
+//     model: raw?.model ?? null,
+//   };
+// }
+//
 export interface AudioSettings {
   navidad: string | null;
   nosotros: string | null;

@@ -18,7 +18,7 @@ import { SettingsDomainPanel } from "./settings-domain-panel";
 import { SettingsBackupsPanel } from "./settings-backups-panel";
 import { SettingsSecurityPanel } from "./settings-security-panel";
 import { SettingsAudioPanel } from "./settings-audio-panel";
-import { SettingsAiAssistantPanel } from "./settings-ai-assistant-panel";
+// import { SettingsAiAssistantPanel } from "./settings-ai-assistant-panel"; // DESACTIVADO (asistente IA)
 import { SETTINGS_SECTIONS } from "../types";
 import type { SettingsSectionKey, SiteSettings } from "../types";
 
@@ -34,7 +34,7 @@ const SLUG_TO_KEY: Record<string, SettingsSectionKey> = {
   "copias-seguridad": "backups",
   seguridad: "security",
   audio: "audio",
-  "asistente-ia": "ai",
+  // "asistente-ia": "ai", // DESACTIVADO (asistente IA)
 };
 
 interface SettingsShellProps {
@@ -64,7 +64,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
     getSiteSettings()
       .then(setSettings)
       .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "No se pudo cargar la configuración.");
+        toast.error(error instanceof Error ? error.message : "No se pudo cargar la configuraciÃ³n.");
       });
   }, []);
 
@@ -82,9 +82,9 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
     try {
       const updated = await updateSiteSettings(settings);
       setSettings(updated);
-      toast.success("Configuración guardada exitosamente");
+      toast.success("ConfiguraciÃ³n guardada exitosamente");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo guardar la configuración.");
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar la configuraciÃ³n.");
     } finally {
       setSaving(false);
     }
@@ -96,7 +96,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
       setSettings(fresh);
       toast.info("Cambios descartados");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo recargar la configuración.");
+      toast.error(error instanceof Error ? error.message : "No se pudo recargar la configuraciÃ³n.");
     }
   }
 
@@ -120,10 +120,10 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-4">
         <div>
           <h1 className="text-3xl font-serif font-semibold tracking-tight text-foreground">
-            Configuración del Sistema
+            ConfiguraciÃ³n del Sistema
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {activeOption ? `${activeOption.label} — ${activeOption.description}` : "Gestiona las opciones globales del sitio web y panel de control"}
+            {activeOption ? `${activeOption.label} â€” ${activeOption.description}` : "Gestiona las opciones globales del sitio web y panel de control"}
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
         </div>
       </div>
 
-      {/* Contenedor Principal: Sidebar Tabs + Panel de Submódulo */}
+      {/* Contenedor Principal: Sidebar Tabs + Panel de SubmÃ³dulo */}
       <div className="flex flex-col lg:flex-row items-start gap-8">
         <SettingsNav active={active} onChange={handleSectionChange} />
 
@@ -178,7 +178,7 @@ export function SettingsShell({ initialSectionSlug }: SettingsShellProps) {
             <SettingsSecurityPanel value={settings.security} onChange={(v) => setSettings({ ...settings, security: v })} />
           )}
           {active === "audio" && <SettingsAudioPanel />}
-          {active === "ai" && <SettingsAiAssistantPanel />}
+          {/* DESACTIVADO (asistente IA): active === "ai" && <SettingsAiAssistantPanel /> */}
 
           {/* Footer de Acciones */}
           <div className="flex justify-end items-center gap-3 mt-8 pt-5 border-t border-border/80">

@@ -121,7 +121,7 @@ export type SettingsSectionKey =
   | "backups"
   | "security"
   | "audio"
-  | "ai";
+  // | "ai"; // DESACTIVADO (asistente IA)
 
 export interface SettingsSectionOption {
   key: SettingsSectionKey;
@@ -142,5 +142,5 @@ export const SETTINGS_SECTIONS: SettingsSectionOption[] = [
   { key: "backups", slug: "copias-seguridad", label: "Copias de Seguridad", description: "Respaldos automáticos y restauración de BD" },
   { key: "security", slug: "seguridad", label: "Seguridad", description: "2FA, bloqueos, sesiones activas y seguridad" },
   { key: "audio", slug: "audio", label: "Audio ambiental", description: "Audios instrumentales MP3 de la tienda" },
-  { key: "ai", slug: "asistente-ia", label: "Asistente IA", description: "Estado del asistente de personalización con Gemini" },
+  // { key: "ai", slug: "asistente-ia", label: "Asistente IA", description: "Estado del asistente de personalización con Gemini" }, // DESACTIVADO (asistente IA)
 ];

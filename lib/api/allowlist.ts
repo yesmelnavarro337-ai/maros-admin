@@ -110,7 +110,7 @@ export const ALLOWED_ROUTES: AllowedRoute[] = [
   { method: "PUT", pattern: /^home-content\/[a-z-]+$/ },
   { method: "GET", pattern: /^public\/invitations\/[A-Za-z0-9_-]+$/ },
   { method: "POST", pattern: /^public\/invitations\/accept$/ },
-  { method: "GET", pattern: /^public\/customization\/assistant$/ },
+  // { method: "GET", pattern: /^public\/customization\/assistant$/ }, // DESACTIVADO (asistente IA)
   { method: "GET", pattern: /^Profile\/me$/ },
   { method: "PUT", pattern: /^Profile$/ },
   { method: "POST", pattern: /^Profile\/change-password$/ },
