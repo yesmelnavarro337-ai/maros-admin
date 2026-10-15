@@ -8,9 +8,10 @@ import {
 
 /**
  * Tallas de la línea de adultos (los 9 modelos estándar).
- * XL, XXL y 2XL son "talla > L" y reciben el recargo de +$10.000 COP.
+ * Recargos automáticos: XL (+ $10.000 COP), 2XL (+ $25.000 COP) y 3XL (+ $30.000 COP).
+ * La talla XXL queda eliminada y unificada/reemplazada por 2XL.
  */
-export const ADULT_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "2XL"] as const;
+export const ADULT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"] as const;
 
 /**
  * Tallas de la línea infantil.
@@ -37,9 +38,10 @@ export const MIXED_SIZES = [...ADULT_SIZES, ...INFANT_SIZES] as const;
 
 export type SizeLine = SizeLineMode;
 
-/** Normaliza una talla para comparar sin depender de espacios ni mayúsculas. */
+/** Normaliza una talla para comparar sin depender de espacios ni mayúsculas, unificando XXL a 2XL. */
 export function normalizeSizeKey(size?: string | null): string {
-  return (size ?? "").trim().toUpperCase().replace(/\s+/g, "");
+  const norm = (size ?? "").trim().toUpperCase().replace(/\s+/g, "");
+  return norm === "XXL" ? "2XL" : norm;
 }
 
 /**

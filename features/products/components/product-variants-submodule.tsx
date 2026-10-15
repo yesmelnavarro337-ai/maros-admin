@@ -29,8 +29,8 @@ import type { ProductVariant, ProductColor } from "../types";
 import { DEFAULT_VARIANT_STOCK } from "../types";
 import { generateUniqueSku } from "../utils/sku-generator";
 import { getColorPreviewStyle } from "../utils/color-helper";
-import { getSizeLineMode, isLargeSize } from "../utils/price-calculator";
-import { getAvailableSizesByStyle } from "../utils/size-helpers";
+import { getSizeLineMode, isLargeSize, getSizeSurcharge, getStyleExactPrice } from "../utils/price-calculator";
+import { getAvailableSizesByStyle, isInfantilStyleName } from "../utils/size-helpers";
 import { toast } from "@/lib/toast";
 
 interface ProductVariantsSubmoduleProps {
@@ -49,6 +49,7 @@ interface ProductVariantsSubmoduleProps {
   onRemoveColor: (name: string) => void;
   onAddStyle?: (style: string) => void;
   onRemoveStyle?: (style: string) => void;
+  onSetStyles?: (styles: string[]) => void;
   onAddMaterial?: (material: string) => void;
   onRemoveMaterial?: (material: string) => void;
   onUpdateVariant: (id: string, patch: Partial<ProductVariant>) => void;
@@ -72,6 +73,7 @@ export function ProductVariantsSubmodule({
   onRemoveColor,
   onAddStyle,
   onRemoveStyle,
+  onSetStyles,
   onAddMaterial,
   onRemoveMaterial,
   onUpdateVariant,
@@ -214,6 +216,7 @@ export function ProductVariantsSubmodule({
               onRemoveColor={onRemoveColor}
               onAddStyle={onAddStyle}
               onRemoveStyle={onRemoveStyle}
+              onSetStyles={onSetStyles}
               onAddMaterial={onAddMaterial}
               onRemoveMaterial={onRemoveMaterial}
             />
@@ -507,8 +510,12 @@ export function ProductVariantsSubmodule({
                           {/* Precio (Inmutable / Auto-calculado) */}
                           <TableCell className="py-2 text-xs">
                             {(() => {
-                              const isPlus = isLargeSize(v.size);
-                              const computedPrice = v.price ?? (isPlus ? basePrice + 10000 : basePrice);
+                              const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+                                ? isInfantilStyleName(v.styleName)
+                                : false;
+                              const surcharge = getSizeSurcharge(v.size, isInfantilSize);
+                              const modelBase = getStyleExactPrice(v.styleName) ?? (basePrice > 0 ? basePrice : 0);
+                              const computedPrice = v.price ?? (modelBase > 0 ? modelBase + surcharge : (basePrice > 0 ? basePrice + surcharge : basePrice));
 
                               return (
                                 <>
@@ -524,8 +531,8 @@ export function ProductVariantsSubmodule({
                                     title="Precio inmutable auto-calculado por regla de estilo y talla."
                                   />
                                   <p className="mt-1 text-[10px] font-medium text-[#555829]">
-                                    {isPlus
-                                      ? `+$10k Talla XL+ (${formatCOP(computedPrice)})`
+                                    {surcharge > 0
+                                      ? `+${formatCOP(surcharge)} Talla (${formatCOP(computedPrice)})`
                                       : `Base estilo (${formatCOP(computedPrice)})`}
                                   </p>
                                 </>

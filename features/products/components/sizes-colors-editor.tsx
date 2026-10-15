@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Sparkles, Lock } from "lucide-react";
+import { X, Plus, Sparkles, Lock, CheckSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -38,6 +38,7 @@ interface SizesColorsEditorProps {
   onRemoveColor: (colorName: string) => void;
   onAddStyle?: (style: string) => void;
   onRemoveStyle?: (style: string) => void;
+  onSetStyles?: (styles: string[]) => void;
   onAddMaterial?: (material: string) => void;
   onRemoveMaterial?: (material: string) => void;
 }
@@ -55,6 +56,7 @@ export function SizesColorsEditor({
   onRemoveColor,
   onAddStyle,
   onRemoveStyle,
+  onSetStyles,
   onAddMaterial,
   onRemoveMaterial,
 }: SizesColorsEditorProps) {
@@ -228,8 +230,8 @@ export function SizesColorsEditor({
               sizeLineMode === "infantil"
                 ? "Ej. 0-3M, 2T, 8, 16"
                 : sizeLineMode === "mixed"
-                  ? "Ej. S, M, L, XL, 2T, 8"
-                  : "Ej. S, M, L, XL"
+                  ? "Ej. S, M, L, XL, 2XL, 3XL, 2T, 8"
+                  : "Ej. S, M, L, XL, 2XL, 3XL"
             }
             value={newSize}
             onChange={(e) => setNewSize(e.target.value)}
@@ -237,12 +239,13 @@ export function SizesColorsEditor({
               if (e.key === "Enter") {
                 e.preventDefault();
                 if (newSize.trim()) {
-                  onAddSize(newSize.trim().toUpperCase());
+                  const val = newSize.trim().toUpperCase();
+                  onAddSize(val === "XXL" ? "2XL" : val);
                   setNewSize("");
                 }
               }
             }}
-            className="w-40 h-8 text-xs bg-white border-[#EBE9DF]"
+            className="w-44 h-8 text-xs bg-white border-[#EBE9DF]"
           />
           <Button
             type="button"
@@ -250,7 +253,8 @@ export function SizesColorsEditor({
             size="sm"
             onClick={() => {
               if (newSize.trim()) {
-                onAddSize(newSize.trim().toUpperCase());
+                const val = newSize.trim().toUpperCase();
+                onAddSize(val === "XXL" ? "2XL" : val);
                 setNewSize("");
               }
             }}
@@ -264,9 +268,53 @@ export function SizesColorsEditor({
 
       {/* SECCIÓN DE ESTILOS FIJOS (LISTA CERRADA) */}
       <div className="border-b border-[#FAF9F5] pb-5">
-        <div className="flex items-center gap-1.5 mb-1">
-          <Lock className="h-3.5 w-3.5 text-[#555829]" />
-          <p className="text-sm font-semibold text-[#34351f]">Estilos Fijos Predefinidos</p>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1.5">
+            <Lock className="h-3.5 w-3.5 text-[#555829]" />
+            <p className="text-sm font-semibold text-[#34351f]">Estilos Fijos Predefinidos</p>
+          </div>
+          {/* Botón de Selección Masiva "Seleccionar todos" / "Deseleccionar todos" */}
+          {availableStyles.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const allSelected = availableStyles.every((st) => styles.includes(st.name));
+                if (allSelected) {
+                  if (onSetStyles) {
+                    onSetStyles([]);
+                  } else if (onRemoveStyle) {
+                    styles.forEach((st) => onRemoveStyle(st));
+                  }
+                } else {
+                  const allNames = availableStyles.map((st) => st.name);
+                  if (onSetStyles) {
+                    onSetStyles(allNames);
+                  } else if (onAddStyle) {
+                    allNames.forEach((name) => {
+                      if (!styles.includes(name)) onAddStyle(name);
+                    });
+                  }
+                }
+              }}
+              className={`h-7 px-2.5 text-xs font-semibold gap-1.5 transition-colors ${
+                availableStyles.length > 0 && availableStyles.every((st) => styles.includes(st.name))
+                  ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:text-rose-800"
+                  : "bg-[#555829]/10 text-[#555829] border-[#555829]/30 hover:bg-[#555829]/20"
+              }`}
+              title={
+                availableStyles.length > 0 && availableStyles.every((st) => styles.includes(st.name))
+                  ? "Deseleccionar y limpiar todos los estilos"
+                  : `Marcar de inmediato los ${availableStyles.length} modelos disponibles`
+              }
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              {availableStyles.length > 0 && availableStyles.every((st) => styles.includes(st.name))
+                ? "Deseleccionar todos"
+                : `Seleccionar todos (${availableStyles.length})`}
+            </Button>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           Selecciona únicamente uno o varios de los 9 modelos oficiales de Maro's Pijamas con precios fijos inmutables.
@@ -301,6 +349,27 @@ export function SizesColorsEditor({
             <Select
               value={selectedStyle}
               onValueChange={(val) => {
+                if (val === "__TOGGLE_ALL_STYLES__") {
+                  const allSelected = availableStyles.every((st) => styles.includes(st.name));
+                  if (allSelected) {
+                    if (onSetStyles) {
+                      onSetStyles([]);
+                    } else if (onRemoveStyle) {
+                      styles.forEach((st) => onRemoveStyle(st));
+                    }
+                  } else {
+                    const allNames = availableStyles.map((st) => st.name);
+                    if (onSetStyles) {
+                      onSetStyles(allNames);
+                    } else if (onAddStyle) {
+                      allNames.forEach((name) => {
+                        if (!styles.includes(name)) onAddStyle(name);
+                      });
+                    }
+                  }
+                  setSelectedStyle("");
+                  return;
+                }
                 if (val && onAddStyle) {
                   onAddStyle(val);
                   setSelectedStyle("");
@@ -311,6 +380,21 @@ export function SizesColorsEditor({
                 <SelectValue placeholder="Seleccionar estilo predefinido..." />
               </SelectTrigger>
               <SelectContent>
+                {/* Opción especial dentro del combobox para Seleccionar todos / Deseleccionar todos */}
+                <SelectItem
+                  value="__TOGGLE_ALL_STYLES__"
+                  className="bg-[#FAF9F5] border-b border-[#EBE9DF] font-semibold text-[#555829] cursor-pointer hover:bg-[#555829]/10 focus:bg-[#555829]/15 mb-1"
+                >
+                  <div className="flex items-center gap-2 py-0.5 text-xs text-[#555829]">
+                    <CheckSquare className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {availableStyles.length > 0 && availableStyles.every((st) => styles.includes(st.name))
+                        ? "Deseleccionar todos los modelos"
+                        : `Seleccionar todos (${availableStyles.length} modelos)`}
+                    </span>
+                  </div>
+                </SelectItem>
+
                 {availableStyles.map((st) => {
                   const isAdded = styles.includes(st.name);
                   return (

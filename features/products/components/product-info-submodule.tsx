@@ -370,7 +370,9 @@ export function ProductInfoSubmodule({
                 </div>
               )}
 
-              {/* Input Dinámico de Precio por Categoría Seleccionada */}
+              {/* [FUTURA IMPLEMENTACIÓN: Precios específicos por categorías]
+                  Esta sección permitía configurar precios personalizados y motivos de recargo por categoría seleccionada.
+                  Se oculta visualmente y queda comentada para reactivación futura sin afectar la validación ni el guardado del formulario principal.
               {selectedCategories.length > 0 && (
                 <div className="space-y-3 mt-4 pt-3 border-t border-[#EBE9DF]">
                   <div className="flex items-center justify-between">
@@ -445,6 +447,7 @@ export function ProductInfoSubmodule({
                   </div>
                 </div>
               )}
+              */}
             </div>
 
             {/* Descripción con Editor / Formato */}
@@ -634,7 +637,7 @@ export function ProductInfoSubmodule({
                   <div className="flex items-start gap-2 pt-1">
                     <Info className="h-4 w-4 text-[#555829] shrink-0 mt-0.5" />
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      <span className="font-semibold text-[#34351f]">Regla de Variantes por Talla:</span> Las tallas estándar (XS, S, M, L) conservan el precio base (${activeBase.toLocaleString("es-CO")} COP). Las tallas mayores a L (XL, 2XL, 3XL, etc.) tienen un recargo automático de +$10.000 COP (${(activeBase + 10000).toLocaleString("es-CO")} COP).
+                      <span className="font-semibold text-[#34351f]">Regla de Variantes por Talla:</span> Las tallas estándar (XS, S, M, L) conservan el precio base (${activeBase.toLocaleString("es-CO")} COP). Las tallas especiales aplican recargos automáticos: Talla XL (+ $10.000 COP), Talla 2XL (+ $25.000 COP) y Talla 3XL (+ $30.000 COP).
                     </p>
                   </div>
                 </div>

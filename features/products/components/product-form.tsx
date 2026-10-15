@@ -160,6 +160,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     removeColor,
     addStyle,
     removeStyle,
+    setAllStyles,
     addMaterial,
     removeMaterial,
     updateVariant,
@@ -555,6 +556,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             onRemoveColor={removeColor}
             onAddStyle={addStyle}
             onRemoveStyle={removeStyle}
+            onSetStyles={setAllStyles}
             onAddMaterial={addMaterial}
             onRemoveMaterial={removeMaterial}
             onUpdateVariant={updateVariant}

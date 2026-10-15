@@ -201,13 +201,27 @@ export function getInfantilBasePrice(styleName?: string | null): number | null {
   return resolveInfantilStyle(styleName)?.price ?? null;
 }
 
+/** Recargos automáticos por talla de adulto */
+export const SURCHARGE_XL = 10000;
+export const SURCHARGE_2XL = 25000;
+export const SURCHARGE_3XL = 30000;
+
 /**
- * Recargo aplicable a una talla: juvenile infantil (+10.000) o talla > L (+10.000).
- * Las tallas adulthood conservan el comportamiento previo basado en isLargeSize.
+ * Recargo aplicable a una talla:
+ * - Infantil juvenil (10 a 16): +$10.000 COP
+ * - Adulto XL: +$10.000 COP
+ * - Adulto 2XL (y XXL unificada): +$25.000 COP
+ * - Adulto 3XL (y tallas superiores): +$30.000 COP
  */
 export function getSizeSurcharge(size?: string | null, isInfantil = false): number {
   if (isInfantil && isInfantilYouthSize(size)) return INFANTIL_YOUTH_SURCHARGE;
-  return isLargeSize(size) ? 10000 : 0;
+  if (!size) return 0;
+  const s = size.trim().toUpperCase().replace(/\s+/g, "");
+  if (s === "3XL" || s === "XXXL" || s === "4XL" || s === "XXXXL" || s === "5XL") return SURCHARGE_3XL;
+  if (s === "2XL" || s === "XXL") return SURCHARGE_2XL;
+  if (s === "XL") return SURCHARGE_XL;
+  if (isLargeSize(size)) return SURCHARGE_XL;
+  return 0;
 }
 
 /** Precio base de una variante ya ajustado por el recargo de su rango de talla. */
@@ -246,6 +260,12 @@ export function getFixedStylePrice(styleName?: string | null): number | null {
   const norm = styleName.trim().toLowerCase();
   const found = FIXED_STYLES.find((s) => s.name.toLowerCase() === norm);
   return found ? found.price : null;
+}
+
+/** Resuelve el precio oficial de un estilo (adulto o infantil). */
+export function getStyleExactPrice(styleName?: string | null): number | null {
+  if (!styleName) return null;
+  return getFixedStylePrice(styleName) ?? getInfantilBasePrice(styleName);
 }
 
 /**
@@ -325,7 +345,7 @@ export function calculatePriceDetails(
   hasEmbroidery = false
 ) {
   const isPlusSize = isLargeSize(size);
-  const sizeSurcharge = isPlusSize ? 10000 : 0;
+  const sizeSurcharge = getSizeSurcharge(size);
   const embroiderySurcharge = hasEmbroidery ? 7000 : 0;
 
   const promoActive = isPromoActive();
