@@ -169,10 +169,10 @@ export function SizesColorsEditor({
                   onClick={() =>
                     isSelected ? onRemoveSize(size) : onAddSize(size)
                   }
-                  className={`min-w-11 px-2.5 py-1.5 rounded-md border text-xs font-semibold transition-colors ${
+                  className={`min-w-11 px-2.5 py-1.5 rounded-md border text-xs font-semibold transition-all shadow-2xs ${
                     isSelected
-                      ? "bg-[#555829] text-white border-[#555829]"
-                      : "bg-white text-[#34351f] border-[#EBE9DF] hover:border-[#555829]"
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold scale-[1.02]"
+                      : "bg-card text-foreground border-border hover:border-primary/60 hover:bg-secondary/40 cursor-pointer"
                   }`}
                 >
                   {size}
@@ -194,8 +194,8 @@ export function SizesColorsEditor({
                   key={size}
                   className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold ${
                     isOutOfCatalog
-                      ? "bg-amber-50 text-amber-900 border-amber-200"
-                      : "bg-[#FAF9F5] text-[#34351f] border-[#EBE9DF]"
+                      ? "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800"
+                      : "bg-muted/60 text-foreground border-border"
                   }`}
                   title={
                     isOutOfCatalog
@@ -218,7 +218,7 @@ export function SizesColorsEditor({
         </div>
 
         {outOfCatalogSizes.length > 0 && (
-          <p className="text-[11px] text-amber-800 mb-3">
+          <p className="text-[11px] text-amber-800 dark:text-amber-300 mb-3">
             Las tallas resaltadas están fuera del rango del estilo seleccionado y no
             deberían generar combinaciones.
           </p>
@@ -245,7 +245,7 @@ export function SizesColorsEditor({
                 }
               }
             }}
-            className="w-44 h-8 text-xs bg-white border-[#EBE9DF]"
+            className="w-44 h-8 text-xs bg-card border-border"
           />
           <Button
             type="button"

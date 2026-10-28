@@ -21,6 +21,7 @@ export interface FixedStyleOption {
 }
 
 export const FIXED_STYLES: FixedStyleOption[] = [
+  { name: "Short - Tiras (Mujer)", price: 65000 },
   { name: "Short - Camisa manga corta (Mujer)", price: 85000 },
   { name: "Short - Camisa manga corta (Hombre)", price: 95000 },
   { name: "Batas", price: 85000 },
@@ -37,8 +38,8 @@ export const PROMO_DISCOUNT_PERCENT = 0.05;
 /* ─────────────────────────── Línea "Pijamas de Niños" ─────────────────────────── */
 
 /**
- * Nota: Las tallas juveniles (10 a 16) NO tienen recargo.
- * Todas las tallas infantiles comparten el mismo precio base del estilo.
+ * Nota: Las tallas juveniles (10 a 16) NO tienen recargo fantasma.
+ * El escalonamiento de precios en camisetas infantiles se refleja en su precio base.
  */
 
 /**
@@ -59,22 +60,20 @@ export const INFANTIL_SMALL_SIZES = [
   "8",
 ] as const;
 
-/** Rango Juvenil: se aplica el mismo precio base del estilo (sin recargo). */
+/** Rango Juvenil: tallas 10 a 16. */
 export const INFANTIL_YOUTH_SIZES = ["10", "12", "14", "16"] as const;
 
 /**
- * Precios base de la línea infantil por estilo.
- * Todas las tallas (Pequeños y Juvenil) comparten el mismo precio base.
- * Pantalón corta 75.000 | Short corta 65.000 | Pantalón larga 90.000
- *
- * Los nombres deben coincidir EXACTAMENTE con los sembrados en la entidad Style
- * (migración AddInfantilStyles), porque el panel resuelve nombre -> id para enviar
- * styleIds al backend. El sufijo "(Infantil)" sustituye al sufijo de género de los
- * estilos de adulto y permite que el selector filtre por línea.
+ * Precios base de la línea infantil por estilo:
+ * - Short - Camiseta: $55.000 COP (hasta la 8) / $65.000 COP (10, 12, 14, 16)
+ * - Pantalón - Camiseta: $65.000 COP (hasta la 8) / $75.000 COP (10, 12, 14, 16)
+ * - Pantalón corta 75.000 | Short corta 65.000 | Pantalón larga 90.000
  */
 export const INFANTIL_STYLES: FixedStyleOption[] = [
-  { name: "Pantalón - Camisa manga corta (Infantil)", price: 75000 },
+  { name: "Short - Camiseta (Infantil)", price: 55000 },
+  { name: "Pantalón - Camiseta (Infantil)", price: 65000 },
   { name: "Short - Camisa manga corta (Infantil)", price: 65000 },
+  { name: "Pantalón - Camisa manga corta (Infantil)", price: 75000 },
   { name: "Pantalón - Camisa manga larga (Infantil)", price: 90000 },
 ];
 
@@ -195,12 +194,29 @@ export function resolveInfantilStyle(styleName?: string | null): FixedStyleOptio
 }
 
 /**
- * Precio base infantil de un estilo (rango Pequeños) o null si el estilo
- * no pertenece a la línea infantil. Acepta los nombres canónicos con sufijo
- * "(Infantil)" y los alias heredados sin sufijo.
+ * Precio base infantil de un estilo según la talla elegida:
+ * - Short - Camiseta: tallas <= 8 -> $55.000 COP | tallas 10-16 -> $65.000 COP
+ * - Pantalón - Camiseta: tallas <= 8 -> $65.000 COP | tallas 10-16 -> $75.000 COP
+ * - Pantalón - Camisa manga corta: $75.000 COP
+ * - Short - Camisa manga corta: $65.000 COP
+ * - Pantalón - Camisa manga larga: $90.000 COP
  */
-export function getInfantilBasePrice(styleName?: string | null): number | null {
-  return resolveInfantilStyle(styleName)?.price ?? null;
+export function getInfantilBasePrice(styleName?: string | null, size?: string | null): number | null {
+  const resolved = resolveInfantilStyle(styleName);
+  if (!resolved) return null;
+
+  const isYouth = isInfantilYouthSize(size);
+  const sig = styleSignature(styleName);
+
+  if (sig.includes("short") && sig.includes("camiseta")) {
+    return isYouth ? 65000 : 55000;
+  }
+
+  if ((sig.includes("pantalon") || sig.includes("pantalón")) && sig.includes("camiseta")) {
+    return isYouth ? 75000 : 65000;
+  }
+
+  return resolved.price;
 }
 
 /** Recargos automáticos por talla de adulto */
@@ -210,7 +226,7 @@ export const SURCHARGE_3XL = 30000;
 
 /**
  * Recargo aplicable a una talla:
- * - Infantil: SIN recargo en ninguna talla (ni pequeñas ni juveniles)
+ * - Infantil: SIN recargo en ninguna talla (el escalonamiento ya está en el precio base)
  * - Adulto XL: +$10.000 COP
  * - Adulto 2XL (y XXL unificada): +$25.000 COP
  * - Adulto 3XL (y tallas superiores): +$30.000 COP
@@ -265,9 +281,9 @@ export function getFixedStylePrice(styleName?: string | null): number | null {
 }
 
 /** Resuelve el precio oficial de un estilo (adulto o infantil). */
-export function getStyleExactPrice(styleName?: string | null): number | null {
+export function getStyleExactPrice(styleName?: string | null, size?: string | null): number | null {
   if (!styleName) return null;
-  return getFixedStylePrice(styleName) ?? getInfantilBasePrice(styleName);
+  return getFixedStylePrice(styleName) ?? getInfantilBasePrice(styleName, size);
 }
 
 /**
@@ -275,23 +291,34 @@ export function getStyleExactPrice(styleName?: string | null): number | null {
  */
 export function calculateAutomaticBasePrice(
   categoryNames: string[] = [],
-  styles: string[] = []
+  styles: string[] = [],
+  size?: string | null
 ): number {
   const catText = categoryNames.join(" ").toLowerCase();
   const styleText = styles.join(" ").toLowerCase();
   const combinedText = `${catText} ${styleText}`;
+  const isYouth = isInfantilYouthSize(size);
 
   // 0. Línea infantil: si la categoría es infantil o alguno de los estilos pertenece al catálogo infantil,
   //    manda exclusivamente la tarifa infantil y nunca cae en tarifas de adulto.
   const isInfant = isInfantilCategory(categoryNames) || styles.some((st) => resolveInfantilStyle(st) !== null);
   if (isInfant) {
     for (const st of styles) {
-      const infantilPrice = getInfantilBasePrice(st);
+      const infantilPrice = getInfantilBasePrice(st, size);
       if (infantilPrice !== null) return infantilPrice;
+    }
+    if (combinedText.includes("camiseta")) {
+      if (combinedText.includes("short")) return isYouth ? 65000 : 55000;
+      if (combinedText.includes("pantalon") || combinedText.includes("pantalón")) return isYouth ? 75000 : 65000;
     }
     if (combinedText.includes("larga")) return 90000;
     if (combinedText.includes("short")) return 65000;
     if (combinedText.includes("pantalon") || combinedText.includes("pantalón")) return 75000;
+    return isYouth ? 65000 : 55000;
+  }
+
+  // Adultos: Short - Tiras (Mujer) -> $65.000 COP
+  if (styleText.includes("tiras") || catText.includes("tiras")) {
     return 65000;
   }
 
