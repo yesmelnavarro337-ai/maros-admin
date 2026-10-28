@@ -36,8 +36,10 @@ export const PROMO_DISCOUNT_PERCENT = 0.05;
 
 /* ─────────────────────────── Línea "Pijamas de Niños" ─────────────────────────── */
 
-/** Recargo COP que se aplica a las tallas juvenile (10 a 16). */
-export const INFANTIL_YOUTH_SURCHARGE = 10000;
+/**
+ * Nota: Las tallas juveniles (10 a 16) NO tienen recargo.
+ * Todas las tallas infantiles comparten el mismo precio base del estilo.
+ */
 
 /**
  * Tokens que identifican una prenda infantil. Se comparan sobre el texto normalizado
@@ -57,13 +59,13 @@ export const INFANTIL_SMALL_SIZES = [
   "8",
 ] as const;
 
-/** Rango Juvenil: se aplica el precio base del estilo + recargo. */
+/** Rango Juvenil: se aplica el mismo precio base del estilo (sin recargo). */
 export const INFANTIL_YOUTH_SIZES = ["10", "12", "14", "16"] as const;
 
 /**
- * Precios base de la línea infantil por estilo (rango Pequeños).
- * Las tallas 10 a 16 se obtienen sumando INFANTIL_YOUTH_SURCHARGE:
- * Pantalón corta 75.000 -> 85.000 | Short corta 65.000 -> 75.000 | Pantalón larga 90.000 -> 100.000
+ * Precios base de la línea infantil por estilo.
+ * Todas las tallas (Pequeños y Juvenil) comparten el mismo precio base.
+ * Pantalón corta 75.000 | Short corta 65.000 | Pantalón larga 90.000
  *
  * Los nombres deben coincidir EXACTAMENTE con los sembrados en la entidad Style
  * (migración AddInfantilStyles), porque el panel resuelve nombre -> id para enviar
@@ -208,13 +210,13 @@ export const SURCHARGE_3XL = 30000;
 
 /**
  * Recargo aplicable a una talla:
- * - Infantil juvenil (10 a 16): +$10.000 COP
+ * - Infantil: SIN recargo en ninguna talla (ni pequeñas ni juveniles)
  * - Adulto XL: +$10.000 COP
  * - Adulto 2XL (y XXL unificada): +$25.000 COP
  * - Adulto 3XL (y tallas superiores): +$30.000 COP
  */
 export function getSizeSurcharge(size?: string | null, isInfantil = false): number {
-  if (isInfantil && isInfantilYouthSize(size)) return INFANTIL_YOUTH_SURCHARGE;
+  if (isInfantil) return 0;
   if (!size) return 0;
   const s = size.trim().toUpperCase().replace(/\s+/g, "");
   if (s === "3XL" || s === "XXXL" || s === "4XL" || s === "XXXXL" || s === "5XL") return SURCHARGE_3XL;
@@ -279,12 +281,18 @@ export function calculateAutomaticBasePrice(
   const styleText = styles.join(" ").toLowerCase();
   const combinedText = `${catText} ${styleText}`;
 
-  // 0. Línea infantil: si alguno de los estilos pertenece al catálogo infantil
-  //    (canónico o alias), manda su precio base. Los estilos de adulto llevan
-  //    "(Mujer)" / "(Hombre)" y nunca se resuelven aquí.
-  for (const st of styles) {
-    const infantilPrice = getInfantilBasePrice(st);
-    if (infantilPrice !== null) return infantilPrice;
+  // 0. Línea infantil: si la categoría es infantil o alguno de los estilos pertenece al catálogo infantil,
+  //    manda exclusivamente la tarifa infantil y nunca cae en tarifas de adulto.
+  const isInfant = isInfantilCategory(categoryNames) || styles.some((st) => resolveInfantilStyle(st) !== null);
+  if (isInfant) {
+    for (const st of styles) {
+      const infantilPrice = getInfantilBasePrice(st);
+      if (infantilPrice !== null) return infantilPrice;
+    }
+    if (combinedText.includes("larga")) return 90000;
+    if (combinedText.includes("short")) return 65000;
+    if (combinedText.includes("pantalon") || combinedText.includes("pantalón")) return 75000;
+    return 65000;
   }
 
   // 1. Probar coincidencia directa en lista fija de estilos
@@ -342,10 +350,11 @@ export function calculateAutomaticBasePrice(
 export function calculatePriceDetails(
   basePrice: number,
   size?: string | null,
-  hasEmbroidery = false
+  hasEmbroidery = false,
+  isInfantil = false
 ) {
-  const isPlusSize = isLargeSize(size);
-  const sizeSurcharge = getSizeSurcharge(size);
+  const isPlusSize = isInfantil ? false : isLargeSize(size);
+  const sizeSurcharge = getSizeSurcharge(size, isInfantil);
   const embroiderySurcharge = hasEmbroidery ? 7000 : 0;
 
   const promoActive = isPromoActive();

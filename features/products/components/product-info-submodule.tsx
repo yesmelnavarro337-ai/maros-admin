@@ -42,7 +42,7 @@ import type { Collection } from "@/features/collections/types";
 import type { CategoryPriceEntry, ProductColor, ProductImageItem, ProductStatus } from "../types";
 import { getColorPreviewStyle } from "../utils/color-helper";
 import { generateUniqueSku } from "../utils/sku-generator";
-import { calculateAutomaticBasePrice, calculatePriceDetails, isPromoActive } from "../utils/price-calculator";
+import { calculateAutomaticBasePrice, calculatePriceDetails, isInfantilCategory, isPromoActive } from "../utils/price-calculator";
 
 interface ProductInfoSubmoduleProps {
   name: string;
@@ -533,8 +533,9 @@ export function ProductInfoSubmodule({
                 selectedCategories.map((c) => c.name),
                 styles
               );
+              const isInfant = isInfantilCategory(selectedCategories.map((c) => c.name)) || styles.some((st) => st.toLowerCase().includes("infantil"));
               const activeBase = basePrice > 0 ? basePrice : autoCalculatedPrice;
-              const details = calculatePriceDetails(activeBase);
+              const details = calculatePriceDetails(activeBase, undefined, false, isInfant);
 
               return (
                 <div className="space-y-4 p-4 rounded-xl border border-[#555829]/20 bg-[#FAF9F5]/70">
