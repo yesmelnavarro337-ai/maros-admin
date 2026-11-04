@@ -20,6 +20,7 @@ interface ProductCardProps {
   onToggleSelect?: () => void;
   onQuickView: () => void;
   onDelete: () => void;
+  onToggleFeaturedHome?: () => void;
 }
 
 export function ProductCard({
@@ -28,6 +29,7 @@ export function ProductCard({
   onToggleSelect,
   onQuickView,
   onDelete,
+  onToggleFeaturedHome,
 }: ProductCardProps) {
   const stock = product.totalStock ?? product.variants.reduce((sum, v) => sum + v.stock, 0);
   const imageUrl = product.imageUrl || product.images[0];
@@ -106,7 +108,27 @@ export function ProductCard({
 
       {/* Bottom Action Bar */}
       <div className="px-3.5 py-2 border-t border-border/50 flex items-center justify-between bg-muted/20">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFeaturedHome?.();
+            }}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
+              product.featuredHome
+                ? "bg-[#34351F] text-white shadow-sm"
+                : "bg-muted/70 text-muted-foreground hover:bg-muted"
+            }`}
+            title={
+              product.featuredHome
+                ? `Destacado en Home (Posición #${product.featuredHomeOrder ?? 1})`
+                : "Destacar en Home"
+            }
+          >
+            <span className={product.featuredHome ? "text-amber-300" : "text-muted-foreground/50"}>★</span>
+            <span>{product.featuredHome ? `#${product.featuredHomeOrder ?? 1}` : "Home"}</span>
+          </button>
           <Button
             size="icon"
             variant="ghost"

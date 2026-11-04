@@ -28,6 +28,7 @@ interface ProductTableProps {
   onToggleSelect?: (id: string) => void;
   onQuickView: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onToggleFeaturedHome?: (product: Product) => void;
 }
 
 export function ProductTable({
@@ -37,6 +38,7 @@ export function ProductTable({
   onToggleSelect,
   onQuickView,
   onDelete,
+  onToggleFeaturedHome,
 }: ProductTableProps) {
   const selectedSet = new Set(selectedIds);
   const allSelected = products.length > 0 && products.every((p) => selectedSet.has(p.id));
@@ -57,6 +59,7 @@ export function ProductTable({
             <TableHead className="text-xs font-semibold text-muted-foreground">Stock</TableHead>
             <TableHead className="text-xs font-semibold text-muted-foreground">Estado</TableHead>
             <TableHead className="text-xs font-semibold text-muted-foreground">Temporada</TableHead>
+            <TableHead className="text-center text-xs font-semibold text-muted-foreground">Home (4)</TableHead>
             <TableHead className="text-right text-xs font-semibold text-muted-foreground">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -112,6 +115,25 @@ export function ProductTable({
                   <span className="inline-block bg-muted/60 text-muted-foreground text-[10px] font-medium px-2 py-0.5 rounded-md">
                     {product.seasonName || "Otoño - Invierno"}
                   </span>
+                </TableCell>
+                <TableCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => onToggleFeaturedHome?.(product)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                      product.featuredHome
+                        ? "bg-[#34351F] text-white shadow-sm"
+                        : "bg-muted/70 text-muted-foreground hover:bg-muted"
+                    }`}
+                    title={
+                      product.featuredHome
+                        ? `En vitrina del Home (Posición #${product.featuredHomeOrder ?? 1})`
+                        : "Clic para destacar en Home"
+                    }
+                  >
+                    <span className={product.featuredHome ? "text-amber-300" : "text-muted-foreground/50"}>★</span>
+                    <span>{product.featuredHome ? `#${product.featuredHomeOrder ?? 1}` : "No"}</span>
+                  </button>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

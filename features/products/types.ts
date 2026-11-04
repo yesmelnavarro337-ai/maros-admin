@@ -1,4 +1,4 @@
-import type { SeoData } from "@/types/seo";
+﻿import type { SeoData } from "@/types/seo";
 
 export type ProductStatus = "activo" | "borrador" | "archivado";
 export type ProductDisplayStatus = "Activo" | "Stock bajo" | "Sin stock" | "Borrador" | "Archivado";
@@ -87,6 +87,7 @@ export interface Product {
   variants: ProductVariant[];
   collectionIds: string[];
   featuredHome: boolean;
+  featuredHomeOrder?: number | null;
   allowCustomization: boolean;
   customizationModelId?: string | null;
   deliveryTime: string;

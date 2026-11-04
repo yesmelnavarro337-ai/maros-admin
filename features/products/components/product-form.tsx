@@ -103,6 +103,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
 
   // Config State
   const [featuredHome, setFeaturedHome] = useState(initialData?.featuredHome ?? false);
+  const [featuredHomeOrder, setFeaturedHomeOrder] = useState<number | null>(initialData?.featuredHomeOrder ?? 1);
   const [allowCustomization, setAllowCustomization] = useState(initialData?.allowCustomization ?? true);
   const [customizationModelId, setCustomizationModelId] = useState<string>(
     initialData?.customizationModelId ?? ""
@@ -312,6 +313,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
         basePrice,
         status,
         featuredHome,
+        featuredHomeOrder: featuredHome ? (featuredHomeOrder ?? 1) : null,
         allowCustomization,
         customizationModelId: customizationModelId || null,
         deliveryTime,
@@ -591,6 +593,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
             setStatus={setStatus}
             featuredHome={featuredHome}
             setFeaturedHome={setFeaturedHome}
+            featuredHomeOrder={featuredHomeOrder}
+            setFeaturedHomeOrder={setFeaturedHomeOrder}
             allowCustomization={allowCustomization}
             setAllowCustomization={setAllowCustomization}
             visibility={visibility}

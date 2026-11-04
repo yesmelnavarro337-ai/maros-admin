@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Package, AlertTriangle, Ban, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { Plus, Package, AlertTriangle, Ban, ChevronLeft, ChevronRight, Heart, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "@/lib/toast";
-import { getProductsPaged, getProductMetrics, deleteProduct } from "../services/products.service";
+import { getProductsPaged, getProductMetrics, deleteProduct, toggleFeaturedHome } from "../services/products.service";
 import { ProductSearch } from "./product-search";
 import { ProductFilters } from "./product-filters";
 import { ViewToggle } from "./view-toggle";
@@ -107,6 +107,21 @@ export function ProductList() {
     );
   };
 
+  const handleToggleFeaturedHome = async (product: Product) => {
+    try {
+      const nextFeatured = !product.featuredHome;
+      const updated = await toggleFeaturedHome(product.id, nextFeatured);
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? updated : p)));
+      toast.success(
+        nextFeatured
+          ? `Producto añadido a los 4 destacados del Home (Posición #${updated.featuredHomeOrder ?? 1})`
+          : "Producto quitado de los destacados del Home"
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "No se pudo actualizar el estado de destacado en Home");
+    }
+  };
+
   const handleToggleSelectAll = () => {
     if (products.length === 0) return;
     const allCurrentIds = products.map((p) => p.id);
@@ -165,12 +180,20 @@ export function ProductList() {
           </p>
         </div>
 
-        <Button asChild className="bg-[#5C5232] text-white hover:bg-[#4A4228] font-medium text-xs rounded-xl shadow-2xs h-10 px-4 shrink-0">
-          <Link href="/admin/productos/nuevo">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo producto
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button asChild variant="outline" className="border-[#34351F]/30 hover:border-[#34351F] text-[#34351F] font-medium text-xs rounded-xl shadow-2xs h-10 px-3.5 gap-1.5">
+            <Link href="/admin/productos/destacados-home">
+              <Home className="h-4 w-4 text-[#8C7A3E]" />
+              <span>Vitrina Home (4)</span>
+            </Link>
+          </Button>
+          <Button asChild className="bg-[#5C5232] text-white hover:bg-[#4A4228] font-medium text-xs rounded-xl shadow-2xs h-10 px-4">
+            <Link href="/admin/productos/nuevo">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo producto
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* 2. Superiores Cards KPI + Promo Banner */}
@@ -285,6 +308,7 @@ export function ProductList() {
             onToggleSelect={handleToggleSelect}
             onQuickView={setQuickViewProduct}
             onDelete={setDeleteTarget}
+            onToggleFeaturedHome={handleToggleFeaturedHome}
           />
         ) : (
           <ProductTable
@@ -294,6 +318,7 @@ export function ProductList() {
             onToggleSelect={handleToggleSelect}
             onQuickView={setQuickViewProduct}
             onDelete={setDeleteTarget}
+            onToggleFeaturedHome={handleToggleFeaturedHome}
           />
         )}
 

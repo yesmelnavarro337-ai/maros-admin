@@ -68,6 +68,7 @@ interface ApiProduct {
   basePrice: number;
   status: string;
   featuredHome: boolean;
+  featuredHomeOrder?: number | null;
   allowCustomization: boolean;
   customizationModelId?: string | null;
   deliveryTime: string;
@@ -264,6 +265,7 @@ function adaptProduct(p: ApiProduct): Product {
       ),
     ],
     featuredHome: p.featuredHome,
+    featuredHomeOrder: p.featuredHomeOrder ?? null,
     allowCustomization: p.allowCustomization,
     customizationModelId: p.customizationModelId ?? null,
     deliveryTime: p.deliveryTime,
@@ -286,6 +288,7 @@ export interface SaveProductPayload {
   basePrice: number;
   status: ProductStatus;
   featuredHome: boolean;
+  featuredHomeOrder?: number | null;
   allowCustomization: boolean;
   customizationModelId?: string | null;
   deliveryTime: string;
@@ -441,6 +444,7 @@ export function toSavePayload(product: Product): SaveProductPayload {
     basePrice: product.basePrice,
     status: product.status,
     featuredHome: product.featuredHome,
+    featuredHomeOrder: product.featuredHomeOrder ?? null,
     allowCustomization: product.allowCustomization,
     customizationModelId: product.customizationModelId ?? null,
     deliveryTime: product.deliveryTime,
@@ -500,4 +504,41 @@ export async function saveFeaturedCatalog(productIds: string[]): Promise<Feature
   revalidateWeb({ tag: "featured-catalog" });
   revalidateWeb({ path: "/catalogo" });
   return updated;
+}
+
+export interface FeaturedHomeSelection {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: number;
+  imageUrl?: string | null;
+  featuredHomeOrder?: number | null;
+}
+
+export async function getFeaturedHomeSelection(): Promise<FeaturedHomeSelection[]> {
+  return apiFetch<FeaturedHomeSelection[]>("Products/featured-home");
+}
+
+export async function saveFeaturedHome(productIds: string[]): Promise<FeaturedHomeSelection[]> {
+  const updated = await apiFetch<FeaturedHomeSelection[]>("Products/featured-home", {
+    method: "PUT",
+    body: { productIds },
+  });
+  revalidateWeb({ tag: "featured-home" });
+  revalidateWeb({ path: "/" });
+  return updated;
+}
+
+export async function toggleFeaturedHome(
+  id: string,
+  featuredHome: boolean,
+  order?: number | null
+): Promise<Product> {
+  const updated = await apiFetch<ApiProduct>(`Products/${id}/featured-home`, {
+    method: "PATCH",
+    body: { featuredHome, order: order ?? null },
+  });
+  revalidateWeb({ tag: "featured-home" });
+  revalidateWeb({ path: "/" });
+  return adaptProduct(updated);
 }

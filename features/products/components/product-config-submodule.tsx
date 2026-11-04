@@ -26,6 +26,8 @@ interface ProductConfigSubmoduleProps {
   setStatus: (val: ProductStatus) => void;
   featuredHome: boolean;
   setFeaturedHome: (val: boolean) => void;
+  featuredHomeOrder?: number | null;
+  setFeaturedHomeOrder?: (val: number) => void;
   allowCustomization: boolean;
   setAllowCustomization: (val: boolean) => void;
   customizationModelId: string;
@@ -50,6 +52,8 @@ export function ProductConfigSubmodule({
   setStatus,
   featuredHome,
   setFeaturedHome,
+  featuredHomeOrder,
+  setFeaturedHomeOrder,
   allowCustomization,
   setAllowCustomization,
   customizationModelId,
@@ -100,15 +104,32 @@ export function ProductConfigSubmodule({
               <Switch checked={isProductActive} onCheckedChange={handleToggleActive} />
             </div>
 
-            {/* Switch Destacado */}
-            <div className="flex items-center justify-between p-3.5 rounded-lg border border-[#EBE9DF] bg-[#FAF9F5]">
-              <div>
-                <p className="text-xs font-semibold text-[#34351f]">Destacado en Home / Ofertas</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Muestra la prenda en el carrusel de novedades de la landing pública
-                </p>
+            {/* Switch Destacado y Selector de Posición 1-4 */}
+            <div className="flex flex-col gap-2.5 p-3.5 rounded-lg border border-[#EBE9DF] bg-[#FAF9F5]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-[#34351f]">Destacado en Home (Vitrina de 4)</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Muestra la prenda en la sección principal de 4 productos destacados del Home
+                  </p>
+                </div>
+                <Switch checked={featuredHome} onCheckedChange={setFeaturedHome} />
               </div>
-              <Switch checked={featuredHome} onCheckedChange={setFeaturedHome} />
+              {featuredHome && (
+                <div className="flex items-center justify-between pt-2.5 border-t border-[#EBE9DF]/70">
+                  <span className="text-xs text-[#34351f] font-medium">Posición en el Home (1 al 4):</span>
+                  <select
+                    value={featuredHomeOrder ?? 1}
+                    onChange={(e) => setFeaturedHomeOrder?.(Number(e.target.value))}
+                    className="h-8 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value={1}>Posición 1</option>
+                    <option value={2}>Posición 2</option>
+                    <option value={3}>Posición 3</option>
+                    <option value={4}>Posición 4</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Switch Personalización */}

@@ -1,4 +1,4 @@
-import {
+﻿import {
   LayoutDashboard,
   ShoppingBag,
   Tags,
@@ -31,6 +31,7 @@ export interface NavItem {
 export const adminNavItems: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Productos", href: "/admin/productos", icon: ShoppingBag },
+  { label: "Destacados Home (4)", href: "/admin/productos/destacados-home", icon: Home },
   { label: "Destacados Catálogo", href: "/admin/productos/destacados-catalogo", icon: Star },
   { label: "Categorías", href: "/admin/categorias", icon: Tags },
   { label: "Colecciones", href: "/admin/colecciones", icon: Layers },

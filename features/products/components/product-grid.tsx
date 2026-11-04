@@ -9,6 +9,7 @@ interface ProductGridProps {
   onToggleSelect?: (id: string) => void;
   onQuickView: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onToggleFeaturedHome?: (product: Product) => void;
 }
 
 export function ProductGrid({
@@ -17,6 +18,7 @@ export function ProductGrid({
   onToggleSelect,
   onQuickView,
   onDelete,
+  onToggleFeaturedHome,
 }: ProductGridProps) {
   const selectedSet = new Set(selectedIds);
 
@@ -30,6 +32,7 @@ export function ProductGrid({
           onToggleSelect={() => onToggleSelect?.(p.id)}
           onQuickView={() => onQuickView(p)}
           onDelete={() => onDelete(p)}
+          onToggleFeaturedHome={() => onToggleFeaturedHome?.(p)}
         />
       ))}
     </div>

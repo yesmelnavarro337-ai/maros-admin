@@ -166,25 +166,30 @@ function styleSignature(value?: string | null): string {
     .trim();
 }
 
-/** Los 9 estilos de adulto se distinguen por el sufijo de género "(Mujer)" / "(Hombre)". */
+/** Los estilos de adulto se distinguen por el sufijo de género "(Mujer)" / "(Hombre)" o coinciden con la lista de estilos de adulto (p. ej. Batas). */
 function hasAdultGenderMarker(value?: string | null): boolean {
   const text = normalizeText(value);
   return text.includes("mujer") || text.includes("hombre");
 }
 
+export function isAdultStyleName(value?: string | null): boolean {
+  const text = normalizeText(value);
+  if (!text) return false;
+  if (hasAdultGenderMarker(value)) return true;
+  return FIXED_STYLES.some((s) => normalizeText(s.name) === text);
+}
+
 /**
  * Resuelve el estilo infantil canónico a partir del nombre, aceptando también los
  * alias heredados sin sufijo "(Infantil)" (p. ej. "Short y camisa manga corta").
- * Un marcador de género adulto siempre gana, porque los 9 modelos oficiales
- * llevan "(Mujer)" / "(Hombre)" y comparten firma base con los infantiles.
+ * Un marcador de género o estilo de adulto siempre gana.
  */
 export function resolveInfantilStyle(styleName?: string | null): FixedStyleOption | null {
   const key = normalizeText(styleName);
   if (!key) return null;
-  // Un marcador de género adulto siempre gana: los 9 modelos oficiales llevan
-  // "(Mujer)" / "(Hombre)" y comparten firma base con los estilos infantiles.
-  if (hasAdultGenderMarker(styleName)) return null;
-  if (key.includes("infantil")) {
+  // Un estilo de adulto siempre gana
+  if (isAdultStyleName(styleName)) return null;
+  if (key.includes("infantil") || key.includes("nino") || key.includes("bebe")) {
     const exact = INFANTIL_STYLES.find((s) => normalizeText(s.name) === key);
     if (exact) return exact;
   }
@@ -299,9 +304,11 @@ export function calculateAutomaticBasePrice(
   const combinedText = `${catText} ${styleText}`;
   const isYouth = isInfantilYouthSize(size);
 
-  // 0. Línea infantil: si la categoría es infantil o alguno de los estilos pertenece al catálogo infantil,
-  //    manda exclusivamente la tarifa infantil y nunca cae en tarifas de adulto.
-  const isInfant = isInfantilCategory(categoryNames) || styles.some((st) => resolveInfantilStyle(st) !== null);
+  // 0. Línea infantil: si alguno de los estilos pertenece al catálogo infantil, o si la categoría es infantil
+  //    y NO contiene estilos explícitos de adulto.
+  const hasAdultStyles = styles.some((st) => isAdultStyleName(st));
+  const hasInfantStyles = styles.some((st) => resolveInfantilStyle(st) !== null);
+  const isInfant = hasInfantStyles || (isInfantilCategory(categoryNames) && !hasAdultStyles);
   if (isInfant) {
     for (const st of styles) {
       const infantilPrice = getInfantilBasePrice(st, size);
