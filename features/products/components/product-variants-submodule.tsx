@@ -510,7 +510,9 @@ export function ProductVariantsSubmodule({
                           {/* Precio (Inmutable / Auto-calculado) */}
                           <TableCell className="py-2 text-xs">
                             {(() => {
-                              const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+                              const isInfantilSize = sizeLineMode === "infantil"
+                                ? true
+                                : sizeLineMode === "mixed"
                                 ? isInfantilStyleName(v.styleName)
                                 : false;
                               const surcharge = getSizeSurcharge(v.size, isInfantilSize);

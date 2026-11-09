@@ -41,7 +41,9 @@ function regenerateVariants(
           const isCombined = Boolean(color.isCombined);
           // Recargo por rango de talla: juvenil infantil (10-16) o talla > L (XL, 2XL, 3XL).
           // En modo mixed, el recargo se aplica según el tipo de talla (infantil vs adulto)
-          const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+          const isInfantilSize = sizeLineMode === "infantil"
+            ? true
+            : sizeLineMode === "mixed"
             ? isInfantilStyleName(styleName)
             : false;
           const surcharge = getSizeSurcharge(size, isInfantilSize);
@@ -135,7 +137,9 @@ export function useVariantMatrix(
 
   const [variants, setVariants] = useState<ProductVariant[]>(() => {
     const resolvePrice = (price: number | null | undefined, size: string, styleName?: string | null) => {
-      const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+      const isInfantilSize = sizeLineMode === "infantil"
+        ? true
+        : sizeLineMode === "mixed"
         ? isInfantilStyleName(styleName)
         : false;
       const surcharge = getSizeSurcharge(size, isInfantilSize);
@@ -184,7 +188,9 @@ export function useVariantMatrix(
     setVariants((prev) =>
       prev.map((v) => {
         const styleForVariant = v.styleName ?? styles[0] ?? "";
-        const isInfantilSize = sizeLineMode === "infantil" || sizeLineMode === "mixed"
+        const isInfantilSize = sizeLineMode === "infantil"
+          ? true
+          : sizeLineMode === "mixed"
           ? isInfantilStyleName(styleForVariant)
           : false;
         const surcharge = getSizeSurcharge(v.size, isInfantilSize);

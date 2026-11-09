@@ -38,8 +38,9 @@ export const PROMO_DISCOUNT_PERCENT = 0.05;
 /* ─────────────────────────── Línea "Pijamas de Niños" ─────────────────────────── */
 
 /**
- * Nota: Las tallas juveniles (10 a 16) NO tienen recargo fantasma.
- * El escalonamiento de precios en camisetas infantiles se refleja en su precio base.
+ * Nota: Las tallas infantiles mayores a la 8 (> 8: 10, 12, 14, 16) aplican un recargo
+ * automático de +$10.000 COP (SURCHARGE_INFANTIL_YOUTH), armonizado con la línea de adultos.
+ * El escalonamiento de precios se maneja limpiamente vía sizeSurcharge.
  */
 
 /**
@@ -132,12 +133,13 @@ export function getInfantilSizeTier(size?: string | null): InfantilSizeTier | nu
   if ((INFANTIL_YOUTH_SIZES as readonly string[]).includes(key)) return "Juvenil";
   if ((INFANTIL_SMALL_SIZES as readonly string[]).includes(key)) return "Pequenos";
 
-  // Tolerancia a variantes de captura: "12A", "14ANOS", "6T", "4A".
+  // Tolerancia a variantes de captura: "12A", "14ANOS", "6T", "4A", etc.
+  // Cualquier talla mayor a 8 (> 8) pertenece al rango Juvenil.
   const numeric = /^(\d{1,2})(?:M|T|A|ANOS)?$/.exec(key);
   if (numeric) {
     const value = Number(numeric[1]);
-    if (value >= 10) return "Juvenil";
-    if (value >= 2) return "Pequenos";
+    if (value > 8) return "Juvenil";
+    if (value >= 1) return "Pequenos";
   }
   return null;
 }
@@ -199,26 +201,28 @@ export function resolveInfantilStyle(styleName?: string | null): FixedStyleOptio
 }
 
 /**
- * Precio base infantil de un estilo según la talla elegida:
- * - Short - Camiseta: tallas <= 8 -> $55.000 COP | tallas 10-16 -> $65.000 COP
- * - Pantalón - Camiseta: tallas <= 8 -> $65.000 COP | tallas 10-16 -> $75.000 COP
- * - Pantalón - Camisa manga corta: $75.000 COP
+ * Precio base infantil canónico de un estilo.
+ * - Short - Camiseta: $55.000 COP
+ * - Pantalón - Camiseta: $65.000 COP
  * - Short - Camisa manga corta: $65.000 COP
+ * - Pantalón - Camisa manga corta: $75.000 COP
  * - Pantalón - Camisa manga larga: $90.000 COP
+ *
+ * El recargo de +$10.000 COP para tallas mayores a la 8 (> 8) se aplica
+ * en `getSizeSurcharge`, armonizado con la línea de adultos.
  */
-export function getInfantilBasePrice(styleName?: string | null, size?: string | null): number | null {
+export function getInfantilBasePrice(styleName?: string | null, _size?: string | null): number | null {
   const resolved = resolveInfantilStyle(styleName);
   if (!resolved) return null;
 
-  const isYouth = isInfantilYouthSize(size);
   const sig = styleSignature(styleName);
 
   if (sig.includes("short") && sig.includes("camiseta")) {
-    return isYouth ? 65000 : 55000;
+    return 55000;
   }
 
   if ((sig.includes("pantalon") || sig.includes("pantalón")) && sig.includes("camiseta")) {
-    return isYouth ? 75000 : 65000;
+    return 65000;
   }
 
   return resolved.price;
@@ -229,16 +233,21 @@ export const SURCHARGE_XL = 10000;
 export const SURCHARGE_2XL = 25000;
 export const SURCHARGE_3XL = 30000;
 
+/** Recargo automático para la línea infantil en tallas mayores a la 8 (> 8: 10, 12, 14, 16) */
+export const SURCHARGE_INFANTIL_YOUTH = 10000;
+
 /**
  * Recargo aplicable a una talla:
- * - Infantil: SIN recargo en ninguna talla (el escalonamiento ya está en el precio base)
+ * - Infantil (> 8): +$10.000 COP (10, 12, 14, 16)
  * - Adulto XL: +$10.000 COP
  * - Adulto 2XL (y XXL unificada): +$25.000 COP
  * - Adulto 3XL (y tallas superiores): +$30.000 COP
  */
 export function getSizeSurcharge(size?: string | null, isInfantil = false): number {
-  if (isInfantil) return 0;
   if (!size) return 0;
+  if (isInfantil) {
+    return isInfantilYouthSize(size) ? SURCHARGE_INFANTIL_YOUTH : 0;
+  }
   const s = size.trim().toUpperCase().replace(/\s+/g, "");
   if (s === "3XL" || s === "XXXL" || s === "4XL" || s === "XXXXL" || s === "5XL") return SURCHARGE_3XL;
   if (s === "2XL" || s === "XXL") return SURCHARGE_2XL;
@@ -315,13 +324,13 @@ export function calculateAutomaticBasePrice(
       if (infantilPrice !== null) return infantilPrice;
     }
     if (combinedText.includes("camiseta")) {
-      if (combinedText.includes("short")) return isYouth ? 65000 : 55000;
-      if (combinedText.includes("pantalon") || combinedText.includes("pantalón")) return isYouth ? 75000 : 65000;
+      if (combinedText.includes("short")) return 55000;
+      if (combinedText.includes("pantalon") || combinedText.includes("pantalón")) return 65000;
     }
     if (combinedText.includes("larga")) return 90000;
     if (combinedText.includes("short")) return 65000;
     if (combinedText.includes("pantalon") || combinedText.includes("pantalón")) return 75000;
-    return isYouth ? 65000 : 55000;
+    return 55000;
   }
 
   // Adultos: Short - Tiras (Mujer) -> $65.000 COP
@@ -387,7 +396,7 @@ export function calculatePriceDetails(
   hasEmbroidery = false,
   isInfantil = false
 ) {
-  const isPlusSize = isInfantil ? false : isLargeSize(size);
+  const isPlusSize = isInfantil ? isInfantilYouthSize(size) : isLargeSize(size);
   const sizeSurcharge = getSizeSurcharge(size, isInfantil);
   const embroiderySurcharge = hasEmbroidery ? 7000 : 0;
 
