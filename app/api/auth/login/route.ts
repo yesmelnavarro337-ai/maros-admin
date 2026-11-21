@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       });
     } catch {
       // Fallback a servidor de producción si el servidor local no está disponible
-      const fallbackUrl = "https://maros-backend-pjvy.onrender.com/api/Auth/login";
+      const fallbackUrl = "https://maros-api.onrender.com/api/Auth/login";
       backendResponse = await fetch(fallbackUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
