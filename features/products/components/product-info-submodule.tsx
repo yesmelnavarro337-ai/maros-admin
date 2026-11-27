@@ -42,7 +42,9 @@ import type { Collection } from "@/features/collections/types";
 import type { CategoryPriceEntry, ProductColor, ProductImageItem, ProductStatus } from "../types";
 import { getColorPreviewStyle } from "../utils/color-helper";
 import { generateUniqueSku } from "../utils/sku-generator";
-import { calculateAutomaticBasePrice, calculatePriceDetails, isInfantilCategory, isPromoActive } from "../utils/price-calculator";
+import { calculateAutomaticBasePrice, calculatePriceDetails, isInfantilCategory } from "../utils/price-calculator";
+import { BlackDaysCountdown } from "@/features/promotions/components/black-days-countdown";
+import { BLACK_DAYS_MESSAGE } from "@/features/promotions/black-days";
 
 interface ProductInfoSubmoduleProps {
   name: string;
@@ -621,8 +623,9 @@ export function ProductInfoSubmodule({
                   {details.promoActive && (
                     <div className="p-3 rounded-lg bg-[#555829]/10 border border-[#555829]/25 text-xs text-[#34351f] space-y-1">
                       <div className="flex items-center justify-between font-semibold">
-                        <span className="flex items-center gap-1.5 text-[#555829] font-bold">
-                          🏷️ Descuento del 5% Activo (04 Oct - 09 Nov)
+                        <span className="flex flex-wrap items-center gap-1.5 text-[#555829] font-bold">
+                          🏷️ {BLACK_DAYS_MESSAGE}
+                          <BlackDaysCountdown />
                         </span>
                         <span className="text-emerald-700 font-extrabold text-sm">
                           ${details.finalPrice.toLocaleString("es-CO")} COP (Venta)

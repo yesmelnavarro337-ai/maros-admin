@@ -1,5 +1,9 @@
 "use client";
 
+import { isBlackDaysActive, PROMO_DISCOUNT_PERCENT } from "@/features/promotions/black-days";
+
+export { PROMO_DISCOUNT_PERCENT } from "@/features/promotions/black-days";
+
 /**
  * Reglas de Precios Fijos Maro's Pijamas
  * 
@@ -32,8 +36,6 @@ export const FIXED_STYLES: FixedStyleOption[] = [
   { name: "Short - Camiseta (Hombre / Mujer)", price: 70000 },
   { name: "Pantalón - Camiseta (Hombre / Mujer)", price: 85000 },
 ];
-
-export const PROMO_DISCOUNT_PERCENT = 0.05;
 
 /* ─────────────────────────── Línea "Pijamas de Niños" ─────────────────────────── */
 
@@ -266,15 +268,8 @@ export function calculateVariantBasePrice(
   return basePrice + getSizeSurcharge(size, isInfantil);
 }
 
-/** Determina si la promoción del 5% está activa según la fecha actual (04 Oct al 09 Nov). */
 export function isPromoActive(currentDate = new Date()): boolean {
-  const year = currentDate.getFullYear();
-  // Mes 9 = Octubre (0-indexed)
-  const startDate = new Date(year, 9, 4, 0, 0, 0);
-  // Mes 10 = Noviembre (0-indexed)
-  const endDate = new Date(year, 10, 9, 23, 59, 59);
-
-  return currentDate >= startDate && currentDate <= endDate;
+  return isBlackDaysActive(currentDate);
 }
 
 const PLUS_SIZES = new Set(["XL", "2XL", "XXL", "3XL", "XXXL", "4XL", "XXXXL", "5XL"]);
@@ -388,7 +383,7 @@ export function calculateAutomaticBasePrice(
 }
 
 /**
- * Retorna detalles del precio calculado incluyendo 5% de descuento, recargo por talla y bordado.
+ * Retorna detalles del precio calculado incluyendo 5% de descuento Black Days, recargo por talla y bordado.
  */
 export function calculatePriceDetails(
   basePrice: number,
